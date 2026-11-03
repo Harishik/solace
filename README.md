@@ -18,7 +18,13 @@ the solar cycle. This was tested on 135 forecast dates from 2016 to 2026 (326k f
 | | |
 |---|---|
 | <img src="assets/solar_analog.gif" alt="Solar-cycle analog forecast"> | <img src="assets/error_by_year.png" alt="Error by year"> |
-| Earlier solar cycles are read forward from today's phase and rescaled to today's flux. | Holding today's flux fails when the cycle turns: 57 % error in 2021, against 15 % with the cycle forecast. |
+| Earlier solar cycles are read forward from today's phase and rescaled to today's flux. | Holding today's flux fails when the cycle turns (57 % in 2021). NASA MSFC's archived forecasts, used as issued, fix the analog's 2025 miss (31 % → 20 %). |
+
+<p align="center"><img src="assets/solar_forecasts.png" width="760" alt="Analog vs NASA MSFC solar-flux forecasts as issued"></p>
+
+After the Cycle 25 maximum, the analog expected a second peak that never came; MSFC's forecast
+followed the decline. Over the 2023–26 test years, physics driven by MSFC's forecast has an 18 %
+median 1-year error and re-entry count error of 47 per date (analog: 20 %, 61).
 
 <p align="center"><img src="assets/gto_reentry.gif" width="760" alt="Eccentric rocket body perigee with and without Sun and Moon"></p>
 
@@ -30,7 +36,7 @@ e ≥ 0.2 objects, the error falls from 34 % to 16 %.
 | | |
 |---|---|
 | <img src="assets/lunisolar_ablation.png" alt="Sun and Moon ablation"> | <img src="assets/window_coverage.png" alt="80 % window coverage by year"> |
-| Sun/Moon perturbations only matter for eccentric orbits. | Online-calibrated 80 % windows: 77 % coverage over the decade, but 56 % in 2025 after the Cycle 25 maximum. |
+| Sun/Moon perturbations only matter for eccentric orbits. | Online-calibrated 80 % windows. Around the analog they fall to 56 % in 2025; around MSFC on a density-corrected atmosphere every year is 73–90 % (81 % on test years). |
 
 The physics, methods and every negative result are written up in [docs/PHYSICS.md](docs/PHYSICS.md).
 
@@ -120,4 +126,4 @@ Space-Track (`--source spacetrack`, with `SPACETRACK_USER` / `SPACETRACK_PASS` s
 - The kinetic-gas conjunction rate assumes random motion. It badly overestimates rates inside coordinated constellation shells (Starlink), so the forecaster will be trained against real CDM labels.
 - The small-debris power-law slopes in the risk index are defaults that still need calibrating against returned-surface impact data.
 - On 2016–2026 history the GNN ties a hybrid physics forecast of 28-day total shell populations. On debris-cohort decay it beats SGP4 physics by 11–14 % at 3 and 6 months, but space-weather inputs add nothing at any target tried, and its re-entry counts are far worse than physics (see PLAN §7).
-- Per-object re-entry (Phase 3c): physics with fitted ballistic coefficients, Sun/Moon perturbations and a solar-cycle analog forecast reaches an 18 % median 1-year timing error over 2016–2026 (persistence 22 %, SGP4 200 %; 12 % given the true future space weather). Calibrated 80 % windows cover 77 % over the decade but only 56 % in 2025, after the Cycle 25 maximum. Learned residuals don't generalise across the solar cycle. Correcting NRLMSIS with CHAMP, GRACE, GRACE-FO and Swarm densities cuts the true-weather re-entry count error by ~20 % but leaves forecast timing unchanged: the 2025 miss comes from the solar-flux forecast, not the atmosphere model (PHYSICS §9). Theory and choices are in [docs/PHYSICS.md](docs/PHYSICS.md).
+- Per-object re-entry (Phase 3c): physics with fitted ballistic coefficients, Sun/Moon perturbations and a solar-cycle analog forecast reaches an 18 % median 1-year timing error over 2016–2026 (persistence 22 %, SGP4 200 %; 12 % given the true future space weather). Calibrated 80 % windows cover 77 % over the decade but only 56 % in 2025, after the Cycle 25 maximum. Learned residuals don't generalise across the solar cycle. Correcting NRLMSIS with CHAMP, GRACE, GRACE-FO and Swarm densities cuts the true-weather re-entry count error by ~20 % but leaves forecast timing unchanged (PHYSICS §9). NASA MSFC's archived flux forecasts fix the 2025 miss (31 % → 20 %) and, with the density correction, keep 80 % windows calibrated in every year (worst 73 %), but no realistic forecast beats ~17–20 % median against 12 % with the true weather (PHYSICS §10). Theory and choices are in [docs/PHYSICS.md](docs/PHYSICS.md).

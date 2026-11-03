@@ -2,6 +2,7 @@
 
 Static charts read reports/phase3c_results.json. The animations recompute from local data:
 - solar_analog.gif: the solar-cycle analog F10.7 forecast issued every 2 months, 2016-2026;
+- solar_forecasts.png: analog vs NASA MSFC forecasts as issued, against what happened;
 - gto_reentry.gif: a real high-eccentricity (Molniya-type) rocket body with and without Sun/Moon;
 - sph_impact.gif: 2-D SPH run of a 2 mm aluminium sphere hitting a Whipple shield at 7 km/s.
 
@@ -18,6 +19,7 @@ from pathlib import Path
 import matplotlib
 
 matplotlib.use("Agg")
+import matplotlib.dates as mdates  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 from matplotlib.animation import FuncAnimation, PillowWriter  # noqa: E402
@@ -27,7 +29,7 @@ RES = Path("reports/phase3c_results.json")
 
 INK, MUTED, GRID = "#1f2430", "#6b7280", "#e5e7eb"
 C = {"sgp4": "#9ca3af", "bstar": "#c4b5a5", "persist": "#f59e0b", "analog": "#2563eb", "oracle": "#059669",
-     "nols": "#dc2626"}
+     "nols": "#dc2626", "msfc": "#7c3aed"}
 
 plt.rcParams.update({
     "figure.dpi": 110, "savefig.dpi": 160, "font.size": 11, "axes.edgecolor": MUTED, "axes.labelcolor": INK,
@@ -52,10 +54,11 @@ def headline():
     r = _res()["all_years"]
     rows = [("SGP4, frozen B*", "sgp4", C["sgp4"]), ("Physics with B* as drag term", "oracle_bstar", C["bstar"]),
             ("Physics, today's solar flux held", "persist", C["persist"]),
-            ("SOLACE: physics + solar-cycle forecast", "analog", C["analog"]),
+            ("Physics + solar-cycle analog", "analog", C["analog"]),
+            ("Physics + NASA MSFC flux forecast", "msfc", C["msfc"]),
             ("Physics, true future weather (bound)", "oracle", C["oracle"])]
     vals = [100 * r[k]["365"]["median_rel_err"] for _, k, _ in rows]
-    fig, ax = plt.subplots(figsize=(8, 3.4))
+    fig, ax = plt.subplots(figsize=(8, 3.8))
     y = np.arange(len(rows))[::-1]
     ax.barh(y, vals, color=[c for *_, c in rows], height=0.62)
     ax.set_xscale("log")
@@ -73,14 +76,15 @@ def by_year():
     r = _res()
     years = sorted(k[5:] for k in r if k.startswith("year_") and r[k]["oracle"]["365"]["median_rel_err"] is not None)
     fig, ax = plt.subplots(figsize=(8, 3.6))
-    series = (("persist", "Today's flux held"), ("analog", "Solar-cycle forecast"), ("oracle", "True future weather"))
+    series = (("persist", "Today's flux held"), ("analog", "Solar-cycle analog"), ("msfc", "NASA MSFC forecast"),
+              ("oracle", "True future weather"))
     for k, lab in series:
         v = [100 * r[f"year_{y}"][k]["365"]["median_rel_err"] for y in years]
         ax.plot(years, v, "o-", color=C[k], lw=2.2, label=lab)
     ax.axvspan(3.5, 5.5, color=C["persist"], alpha=0.08)
     ax.text(4.5, 2, "cycle 25 rises", ha="center", color=C["persist"], fontsize=10)
     ax.set_ylabel("Median timing error, %")
-    ax.set_title("Holding today's solar flux fails when the cycle turns")
+    ax.set_title("Holding today's flux fails when the cycle turns; MSFC fixes 2025")
     ax.legend(loc="upper left")
     ax.set_ylim(0, 62)
     _save(fig, "error_by_year.png")
@@ -89,12 +93,16 @@ def by_year():
 def coverage():
     r = _res()
     years = [k[5:] for k in r if k.startswith("year_") and r[k]["window_80"]["365"]["coverage_80"] is not None]
-    cov = [r[f"year_{y}"]["window_80"]["365"]["coverage_80"] for y in years]
+    x = np.arange(len(years))
     fig, ax = plt.subplots(figsize=(8, 3.4))
-    ax.bar(years, cov, color=[C["analog"] if c >= 0.7 else "#93c5fd" for c in cov], width=0.65)
+    runs = ((-0.19, "window_80", "Around analog forecast", C["analog"]),
+            (0.19, "window_80_msfc_hold", "Around MSFC + corrected atmosphere", C["msfc"]))
+    for dx, key, lab, col in runs:
+        ax.bar(x + dx, [r[f"year_{y}"][key]["365"]["coverage_80"] for y in years], 0.36, color=col, label=lab)
+    ax.set_xticks(x, years)
     ax.axhline(0.8, color=INK, ls="--", lw=1.2, label="Target 80 %")
     ax.axhline(0.40, color=C["nols"], ls=":", lw=1.4, label="First attempt (quantile regression), test years")
-    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.1), ncol=2, fontsize=10)
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.1), ncol=2, fontsize=9.5)
     ax.set_ylim(0, 1)
     ax.set_ylabel("Share of re-entries inside window")
     ax.set_title("Calibrated 80 % re-entry windows (online, no look-ahead)")
@@ -266,7 +274,39 @@ def sph_gif():
     print("wrote", OUT / "sph_impact.gif")
 
 
+def solar_forecasts(issues=(date(2019, 3, 4), date(2021, 6, 7), date(2023, 6, 5), date(2024, 9, 2))):
+    from solace.risk import solar as S
+    from solace.risk.drivers import load_space_weather
+
+    sw = load_space_weather()
+    last = max(d for d, r in sw.items() if r.get("type", "").startswith("OBS"))
+    h, msfc = S.SolarHistory(sw, last), S.MSFCForecasts()
+    fig, axes = plt.subplots(2, 2, figsize=(10, 5.6), sharey=True)
+    for ax, d in zip(axes.flat, issues):
+        i = h.idx(d) - 1
+        back, ahead = np.arange(-540, 1), np.arange(731)
+        obs_x = [d + timedelta(int(k)) for k in range(-540, min(730, len(h.f81c) - 1 - i))]
+        ax.plot(obs_x, h.f81c[i - 540: i + 1 + len(obs_x) - len(back)], color=MUTED, lw=2, label="What happened")
+        mf, _, _ = h.analog(d, 730, 730.0)
+        f_m, _ = msfc.forecast(d, 730, anchor=h.f81[i])
+        xs = [d + timedelta(int(k)) for k in ahead]
+        ax.fill_between(xs, *np.percentile(mf, [10, 90], 0), color=C["analog"], alpha=0.12, lw=0)
+        ax.plot(xs, np.median(mf, 0), color=C["analog"], lw=2, label="Solar-cycle analog")
+        ax.plot(xs, f_m, color=C["msfc"], lw=2, label="NASA MSFC, as issued")
+        ax.axvline(d, color=INK, lw=0.8, ls=":")
+        ax.set_title(f"Issued {d:%b %Y}", fontsize=11)
+        ax.xaxis.set_major_locator(mdates.YearLocator())
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+    for ax in axes[:, 0]:
+        ax.set_ylabel("F10.7, 81-day mean (sfu)")
+    axes[0, 0].legend(loc="upper left", fontsize=9)
+    fig.suptitle("Two-year solar-flux forecasts, as they were issued", x=0.01, ha="left", fontweight="bold")
+    fig.tight_layout()
+    _save(fig, "solar_forecasts.png")
+
+
 ALL = {"headline": headline, "by_year": by_year, "coverage": coverage, "lunisolar": lunisolar,
+       "solar_forecasts": solar_forecasts,
        "solar_gif": solar_gif, "gto_gif": gto_gif, "sph_gif": sph_gif}
 
 if __name__ == "__main__":

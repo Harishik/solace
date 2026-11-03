@@ -35,6 +35,8 @@ OUT = Path("reports/phase3c_results.json")
 HORIZONS = (30, 90, 180, 365)
 METHODS = ("sgp4", "persist", "learned_sw", "analog", "analog_obj", "oracle_bstar", "oracle_nols", "oracle")
 CORRECTED = ("analog_hold", "analog_taper", "oracle_hold", "oracle_taper")  # Phase 3d, NRLMSIS bias-corrected
+MSFC = ("msfc", "blend", "msfc_hold")  # Phase 3e/3f, NASA MSFC solar-cycle forecasts
+EXTRA = {"phase3d": CORRECTED, "phase3e": MSFC[:2], "phase3f": MSFC[2:]}
 FEATURES = ("hp", "ha", "e", "inc", "log_bc", "bc_fallback", "rb", "f107a", "f107_slope", "ap81",
             "log_persist", "tle_age", "baseline_days", "log_decay_rate", "doy")
 OBJ_FEATURES = ("hp", "ha", "e", "inc", "log_bc", "bc_fallback", "rb", "tle_age", "baseline_days", "log_decay_rate",
@@ -46,15 +48,17 @@ def load():
     z = np.load(ROWS, allow_pickle=True)
     r = {k: z[k] for k in z.files}
     r["issue"] = r["issue"].astype("U10")
-    shards = sorted(Path("reports").glob("phase3d_rows_*.npz"))
-    if shards:
-        key = {(i, n): k for k, (i, n) in enumerate(zip(r["issue"], r["norad"]))}
-        for name in CORRECTED:
+    key = {(i, n): k for k, (i, n) in enumerate(zip(r["issue"], r["norad"]))}
+    for phase, names in EXTRA.items():
+        shards = sorted(Path("reports").glob(f"{phase}_rows_*.npz"))
+        if not shards:
+            continue
+        for name in names:
             r[name] = np.full(len(r["issue"]), np.nan)
         for sh in shards:
             d = np.load(sh, allow_pickle=True)
             idx = np.array([key[(i, n)] for i, n in zip(d["issue"].astype("U10"), d["norad"])])
-            for name in CORRECTED:
+            for name in names:
                 r[name][idx] = d[name]
     return r
 
@@ -179,14 +183,16 @@ def score(r, mask, pred, H):
 def main():
     r = load()
     global METHODS
-    if "oracle_hold" in r:
-        # Score only the issue dates the corrected run has finished, so all methods see the same objects.
-        keep = np.isfinite(r["oracle_hold"]) | np.isinf(r["oracle_hold"])
-        r = {k: v[keep] for k, v in r.items()}
-        METHODS = METHODS + CORRECTED
+    # Score only the issue dates every extra run has finished, so all methods see the same objects.
+    for names in EXTRA.values():
+        if names[0] in r:
+            keep = ~np.isnan(r[names[0]])
+            r = {k: v[keep] for k, v in r.items()}
+            METHODS = METHODS + names
     preds = {k: r[k] for k in METHODS if k in r}
     lw = learned(r)
     preds.update({k: lw[k] for k in ("learned_sw", "analog_obj")})
+    other_windows = {m: conformal_windows(r, r[m]) for m in MSFC if m in r}
     test = r["issue"] >= SPLIT
     subsets = {
         "all_test": test,
@@ -206,6 +212,8 @@ def main():
            for name, mask in subsets.items()}
     for name, mask in subsets.items():
         res[name]["window_80"] = {H: windows(r, mask, lw["lo"], lw["hi"], H) for H in HORIZONS}
+        for m, (lo, hi) in other_windows.items():
+            res[name][f"window_80_{m}"] = {H: windows(r, mask, lo, hi, H) for H in HORIZONS}
     OUT.write_text(json.dumps(res, indent=1))
 
     print(f"rows {len(r['norad'])}, issues {len(np.unique(r['issue']))}, test issues >= {SPLIT}: "
@@ -228,6 +236,13 @@ def main():
     print("\n== by year, H=365: 80 % window coverage")
     print(" ".join(f"{k[5:]} {res[k]['window_80'][365]['coverage_80']:.2f}" for k in res
                    if k.startswith("year_") and res[k]["window_80"][365]["coverage_80"] is not None))
+    for m in other_windows:
+        cov = {k[5:]: res[k]["window_80_" + m][365]["coverage_80"] for k in res if k.startswith("year_")}
+        print(f"  around {m}: " + " ".join(f"{y} {c:.2f}" for y, c in cov.items() if c is not None))
+        for name in ("all_test", "all_years"):
+            w = res[name]["window_80_" + m]
+            print(f"    {name}: " + " | ".join(f"H{H} {w[H]['coverage_80']:.2f} x{w[H]['median_width_factor']:.2f}"
+                                             for H in HORIZONS if w[H]["coverage_80"] is not None))
     print("\n== by year, H=365: median relative timing error")
     for name in [k for k in res if k.startswith("year_")]:
         s = res[name]
