@@ -109,7 +109,12 @@ def analog_table(hist, issue: date, days_ahead: int, step: int = 5, fade_days: f
     """Density from the solar-cycle analog forecast (median of earlier cycles read forward from
     today's phase; see solar.py). Uses only data available on `issue`."""
     mf, ma, _ = hist.analog(issue, days_ahead + 2 * step, fade_days)
-    f, ap = np.median(mf, 0), np.median(ma, 0)
+    return forecast_table(issue, np.median(mf, 0), np.median(ma, 0), days_ahead, step)
+
+
+def forecast_table(issue: date, f: np.ndarray, ap: np.ndarray, days_ahead: int, step: int = 5) -> DensityTable:
+    """Density from a smoothed daily F10.7/Ap forecast for days 0..(at least days_ahead + 2 step)
+    after `issue`; the smoothed flux serves as both the daily and the 81-day value."""
     n = days_ahead // step + 2
     ahead = step * np.arange(n)
     times = np.array([np.datetime64(issue.isoformat() + "T12:00") + np.timedelta64(int(x), "D") for x in ahead])

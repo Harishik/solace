@@ -110,3 +110,44 @@ def issue_dates(first: date, last: date, step: int = 28) -> list[date]:
         out.append(d)
         d += timedelta(step)
     return out
+
+
+class MSFCForecasts:
+    """NASA MSFC's archived monthly solar-cycle forecasts (scripts/fetch_msfc.py).
+
+    `forecast(d, n)` gives daily F10.7 and Ap for days 0..n after d from the latest forecast
+    issued in a month before d's month, so it was public on d. With `anchor` (today's trailing
+    81-day F10.7) the forecast is rescaled to match today's level, the rescaling fading over
+    `fade_days` as in the analog forecast.
+    """
+
+    def __init__(self, path=None):
+        from pathlib import Path
+
+        from ..ingest.cache import DATA_DIR
+
+        path = Path(path or Path(DATA_DIR) / "solar" / "msfc_forecasts.npz")
+        with np.load(path) as z:
+            self.z = {k: z[k] for k in z.files}
+        self.issues = np.unique(self.z["issue"])
+
+    def issued_before(self, d: date) -> int:
+        cut = date(d.year, d.month, 1).toordinal()
+        ok = self.issues[self.issues < cut]
+        if not len(ok):
+            raise ValueError(f"no MSFC forecast before {d}")
+        return int(ok[-1])
+
+    def forecast(self, d: date, days_ahead: int, pct: str = "50", anchor: float | None = None,
+                 fade_days: float = 365.0):
+        m = self.z["issue"] == self.issued_before(d)
+        t = self.z["t"][m]
+        # Tabulated times are month starts in decimal years; values are monthly means, so sit mid-month.
+        x = np.array([(date(int(y), 1, 1).toordinal() + (y - int(y)) * 365.25 + 15) for y in t])
+        days = d.toordinal() + np.arange(days_ahead + 1)
+        f = np.interp(days, x, self.z["f" + pct][m])
+        ap = np.interp(days, x, self.z["ap" + pct][m])
+        if anchor is not None:
+            s = np.clip((anchor - FLOOR) / max(f[0] - FLOOR, 5.0), 0.3, 3.0)
+            f = FLOOR + (f - FLOOR) * (1 + (s - 1) * np.exp(-np.arange(days_ahead + 1) / fade_days))
+        return f, ap

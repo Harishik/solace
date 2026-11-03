@@ -340,3 +340,70 @@ What this shows:
 
 The remaining lever is the cycle forecast itself (archived NOAA/SWPC predictions), not the
 density model.
+
+## 10. Benchmark: NASA MSFC's archived solar-cycle forecasts
+
+Section 9 showed that the 2025 miss came from the solar-flux forecast. The usual flux forecast
+for lifetime and re-entry planning is NASA Marshall's monthly forecast of 13-month smoothed F10.7
+and Ap (5/50/95 % percentiles). MSFC has published one every month since 1999, and every issue
+is still online. `scripts/fetch_msfc.py` downloads all 331 of them.
+
+**How we use it** (`solace.risk.solar.MSFCForecasts`):
+- **No look-ahead.** At each issue date we use the latest forecast from an earlier calendar month.
+- **Anchoring.** The median flux is rescaled to today's 81-day F10.7, and the rescaling fades over
+  a year, exactly as the analog does. Without anchoring, MSFC's lagged smoothing starts too low
+  in 2024 (bias −0.18 at 90 days).
+- **Three variants:**
+  - **msfc**: MSFC flux and Ap;
+  - **blend**: geometric mean of MSFC and analog flux, with the analog's Ap;
+  - **msfc_hold**: MSFC on the density-corrected atmosphere of §9.
+- **Same inputs as Phase 3c.** All three use the Phase 3c objects and fitted ballistic
+  coefficients (§9's for msfc_hold), so only the future weather changes.
+
+**Flux skill.** Median |ln(forecast/observed)| of mean F10.7 over the next L days, at 135 dates:
+
+| | 90 d | 1 year | 2 years | 1 year, 2016–22 | 1 year, 2023+ |
+|---|---|---|---|---|---|
+| Persistence | 0.065 | 0.086 | 0.127 | 0.057 | 0.149 |
+| Analog | 0.054 | 0.067 | 0.080 | 0.062 | 0.103 |
+| MSFC, anchored | **0.050** | **0.053** | 0.065 | **0.021** | 0.111 |
+
+**Re-entry, 1-year horizon** (median timing error / count error per date):
+
+| | Test 2023+ | All years | 2020 | 2021 | 2024 | 2025 |
+|---|---|---|---|---|---|---|
+| Persistence | 19 % / 70 | 22 % / 61 | 33 % | 57 % | 21 % | 22 % |
+| Analog | 20 % / 61 | 18 % / 38 | 17 % | 15 % | 20 % | **31 %** |
+| MSFC | **18 % / 47** | 18 % / 37 | 20 % | 20 % | 21 % | **20 %** |
+| Blend | 19 % / 53 | **17 % / 35** | 18 % | 17 % | 21 % | 24 % |
+| MSFC + corrected atmosphere | 20 % / 51 | 18 % / 36 | 17 % | 13 % | 23 % | 21 % |
+| True weather (bound) | 13 % / 30 | 12 % / 19 | 17 % | 10 % | 14 % | 13 % |
+
+**80 % window coverage** (online conformal, §8.4), 1-year horizon:
+
+| Around | Test | All years | Worst year | 2025 | Median width |
+|---|---|---|---|---|---|
+| Analog | 0.73 | 0.77 | 0.56 (2025) | 0.56 | ×2.0 |
+| MSFC | 0.79 | 0.82 | 0.58 (2020) | 0.76 | ×2.1 |
+| MSFC + corrected atmosphere | **0.81** | 0.79 | **0.73** (2020) | **0.80** | ×2.1 |
+
+What this shows:
+- **MSFC fixes the analog's 2025 failure.** After the Cycle 25 maximum the analog expected
+  another peak; MSFC expected the decline that happened (`assets/solar_forecasts.png`). The
+  2025 error falls from 31 % to 20 %, and the count error on the test years from 61 to 47.
+- **A better flux forecast exposes the atmosphere bias.** In 2020–21 MSFC is closer to the real
+  flux, yet re-entry gets worse (20 % vs 15–17 %). There the analog's flux error was cancelling
+  NRLMSIS's solar-minimum bias. Adding §9's density correction restores those years (17 % and
+  13 %). This is the first configuration in which both pieces pull in the same direction.
+- **Windows are calibrated every year only with both fixes.** Around MSFC on the corrected
+  atmosphere, coverage is 0.73–0.90 every year from 2017 to 2025, against a low of 0.56 around
+  the analog. This is the most useful result for operations: the stated uncertainty can be
+  trusted through a whole solar cycle, including both turning points.
+- **The point forecasts are statistically close.** All realistic forecasts sit at 17–20 % median,
+  against 12 % with the true weather. The remaining gap is the unpredictable part of solar
+  activity (storms, 27-day rotation, the size of individual peaks) and does not close with a
+  better cycle forecast alone. What MSFC buys is robustness: the worst year improves from 31 %
+  to 20–21 %.
+
+**Recommended configuration:** the MSFC forecast on the density-corrected atmosphere, with the
+calibrated windows around it. Use the blend if only the point error matters.

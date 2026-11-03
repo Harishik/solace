@@ -335,8 +335,10 @@ Findings so far, which feed the paper:
   constellations. This is a clean, publishable side result (contribution 4).
 
 Still to do:
-- **Phase 3 next:** (a) compare the analog with archived NOAA/SWPC cycle predictions over the same
-  dates (now the main lever: with true weather 2025 is 13 %, with the analog 31 %); (b) DONE,
+- **Phase 3 next:** (a) DONE, Phase 3e/3f: NASA MSFC's archived monthly forecasts (331 issues,
+  1999–2026) as issued (PHYSICS §10). 2025: 31 % → 20 %; test count error 61 → 47; MSFC on the
+  density-corrected atmosphere keeps 80 % windows at 0.73–0.90 every year (analog: down to 0.56).
+  Point medians all 17–20 % vs 12 % with true weather; (b) DONE,
   Phase 3d: NRLMSIS bias correction from CHAMP/GRACE/GRACE-FO/Swarm densities (PHYSICS §9).
   It removes the solar-minimum bias and cuts true-weather count error 19 → 15 per date, but
   doesn't change timing and hurts the analog, so it stays off in forecasts; (c) patch pySSEM's
