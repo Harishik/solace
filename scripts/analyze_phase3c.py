@@ -34,6 +34,7 @@ ROWS = Path("reports/phase3c_rows.npz")
 OUT = Path("reports/phase3c_results.json")
 HORIZONS = (30, 90, 180, 365)
 METHODS = ("sgp4", "persist", "learned_sw", "analog", "analog_obj", "oracle_bstar", "oracle_nols", "oracle")
+CORRECTED = ("analog_hold", "analog_taper", "oracle_hold", "oracle_taper")  # Phase 3d, NRLMSIS bias-corrected
 FEATURES = ("hp", "ha", "e", "inc", "log_bc", "bc_fallback", "rb", "f107a", "f107_slope", "ap81",
             "log_persist", "tle_age", "baseline_days", "log_decay_rate", "doy")
 OBJ_FEATURES = ("hp", "ha", "e", "inc", "log_bc", "bc_fallback", "rb", "tle_age", "baseline_days", "log_decay_rate",
@@ -45,6 +46,16 @@ def load():
     z = np.load(ROWS, allow_pickle=True)
     r = {k: z[k] for k in z.files}
     r["issue"] = r["issue"].astype("U10")
+    shards = sorted(Path("reports").glob("phase3d_rows_*.npz"))
+    if shards:
+        key = {(i, n): k for k, (i, n) in enumerate(zip(r["issue"], r["norad"]))}
+        for name in CORRECTED:
+            r[name] = np.full(len(r["issue"]), np.nan)
+        for sh in shards:
+            d = np.load(sh, allow_pickle=True)
+            idx = np.array([key[(i, n)] for i, n in zip(d["issue"].astype("U10"), d["norad"])])
+            for name in CORRECTED:
+                r[name][idx] = d[name]
     return r
 
 
@@ -167,6 +178,12 @@ def score(r, mask, pred, H):
 
 def main():
     r = load()
+    global METHODS
+    if "oracle_hold" in r:
+        # Score only the issue dates the corrected run has finished, so all methods see the same objects.
+        keep = np.isfinite(r["oracle_hold"]) | np.isinf(r["oracle_hold"])
+        r = {k: v[keep] for k, v in r.items()}
+        METHODS = METHODS + CORRECTED
     preds = {k: r[k] for k in METHODS if k in r}
     lw = learned(r)
     preds.update({k: lw[k] for k in ("learned_sw", "analog_obj")})

@@ -336,8 +336,10 @@ Findings so far, which feed the paper:
 
 Still to do:
 - **Phase 3 next:** (a) compare the analog with archived NOAA/SWPC cycle predictions over the same
-  dates; (b) density-model bias correction near solar maximum (HASDM/SET-calibrated density or a
-  learned correction to NRLMSIS, trained on the true-weather errors); (c) patch pySSEM's
+  dates (now the main lever: with true weather 2025 is 13 %, with the analog 31 %); (b) DONE,
+  Phase 3d: NRLMSIS bias correction from CHAMP/GRACE/GRACE-FO/Swarm densities (PHYSICS §9).
+  It removes the solar-minimum bias and cuts true-weather count error 19 → 15 per date, but
+  doesn't change timing and hurts the analog, so it stays off in forecasts; (c) patch pySSEM's
   launch-file path and add it as the environment baseline.
 - **Hard-body radius:** DISCOS sizes (needs ESA access).
 - **Calibration:** check the risk index against Hubble/ISS impact surveys.

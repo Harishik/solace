@@ -260,3 +260,83 @@ date. A year like 2025 therefore misses together. Calibration can only catch up 
 objects have re-entered, and with one cycle of test data that is not enough. The remedies are
 upstream: a better cycle forecast (archived NOAA/SWPC predictions) and an atmosphere-model
 bias correction near solar maximum (e.g. HASDM-calibrated density).
+
+## 9. Correcting NRLMSIS with observed densities
+
+Section 8.4 left one question open. Was the 2024 lateness of the true-weather run an
+NRLMSIS bias near solar maximum? We tested that with open satellite densities.
+
+**Data** (ESA swarm-diss server, no account; `scripts/fetch_density.py`). We sampled every
+second or third day and kept 5-minute samples:
+
+| Satellite | Years | Altitude | Source |
+|---|---|---|---|
+| CHAMP | 2000–2010 | 300–450 km | accelerometer (TU Delft) |
+| GRACE 1 | 2002–2017 | 400–500 km | accelerometer (TU Delft) |
+| Swarm B, C | 2014–2026 | 450–520 km | precise orbits (ESA) |
+| GRACE-FO 1 | 2018–2026 | ~490 km | accelerometer (TU Delft) |
+
+For each sample, NRLMSIS 2.0 runs at the satellite's own position and time, with the same
+F10.7/Ap drivers as the re-entry model. This gives δ = ln(ρ_obs / ρ_MSIS). We keep daily
+medians, about 8,900 days in all.
+
+**What the bias looks like.** δ does not change monotonically with solar flux. It is about −0.55
+at solar minimum (2018–2020), about 0 at moderate flux, and about −0.1 to −0.13 at high flux
+and through 2024–26. The five satellites agree to within about 0.02.
+
+A constant δ does not matter for re-entry, because the fitted ballistic coefficient absorbs it.
+Only the change in δ between the fit window and the forecast window matters.
+
+**Model** (`src/solace/risk/density_bias.py`):
+
+δ = g(F81) + s(F81)·z + b·ln(1+Ap) + satellite offset, with z = (h−450)/100.
+
+- g and s are piecewise linear in F81 and smoothed.
+- F81 is clamped to the training range, so the model never extrapolates.
+- At each issue date the model is fitted only to data more than 90 days old.
+- The correction is added to log ρ for both the fit window and the forecast.
+- Below the lowest observed altitude it is either held constant or tapered to zero at 120 km.
+
+**Out-of-sample check on δ itself.** We scored the error in the predicted 1-year change of δ:
+
+| Model | Error | Change vs none |
+|---|---|---|
+| No correction | 0.125 | — |
+| Linear-in-F model | 0.154 | worse |
+| Spline, Swarm/GRACE-FO only | 0.096 | −23 % |
+| Spline, with CHAMP/GRACE (cycle 23 maximum) | 0.084 | −33 % |
+
+**Re-entry results** (`scripts/run_phase3d.py`): the same 135 dates and 326k forecasts as §8.4,
+at the 1-year horizon.
+
+| | Test median | All-years median | Count error per date (all years) |
+|---|---|---|---|
+| True weather | 13 % | 12 % | 19 |
+| True weather + correction | 13 % | 12 % | **15** |
+| Analog | 20 % | 18 % | 38 |
+| Analog + correction | 20 % | 18 % | 42 |
+
+Held and tapered corrections give the same results to two decimals. Median ln(actual/predicted)
+for true weather:
+
+| Year | 2019 | 2020 | 2021 | 2023 | 2024 | 2025 |
+|---|---|---|---|---|---|---|
+| Uncorrected | −0.01 | −0.10 | −0.05 | +0.01 | +0.11 | +0.02 |
+| Corrected | +0.01 | −0.01 | +0.02 | −0.01 | +0.09 | −0.01 |
+
+What this shows:
+- **The correction does what it should with the true weather.** The solar-minimum bias in
+  2020–21 disappears, and re-entry count errors fall by about 20 %. Medians barely move, because
+  the fitted ballistic coefficient already absorbs most of the bias.
+- **2024 is only partly explained by MSIS.** The bias falls from +0.11 to +0.09. Most of the
+  2024 lateness lies outside what the density data at 300–520 km show. Likely causes are the
+  May and October 2024 storms, and altitudes below 300 km where most objects spend their final
+  months.
+- **The correction does not help the analog forecast and should stay off there.** In 2018–21 the
+  analog's flux error had been cancelling the atmosphere bias. Removing one exposes the other
+  (2020 analog bias goes from +0.01 to +0.14).
+- **The 2025 miss is a solar-forecast miss, not an atmosphere miss.** With the true weather 2025
+  is fine (13 % median, bias −0.01). With the analog it is 31 % (bias +0.12 to +0.14).
+
+The remaining lever is the cycle forecast itself (archived NOAA/SWPC predictions), not the
+density model.

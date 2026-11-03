@@ -47,6 +47,8 @@ class DensityTable:
     start: date
     step: float
     logrho: np.ndarray
+    f107a: np.ndarray | None = None  # drivers behind each row, so a density-model correction can be applied
+    ap: np.ndarray | None = None
 
     def __call__(self, t_days: np.ndarray, alt_km: np.ndarray) -> np.ndarray:
         """rho (kg/m^3) for each object's time (days since `start`) and altitudes (..., nodes).
@@ -64,13 +66,21 @@ class DensityTable:
     def offset(self, d: date) -> float:
         return float((d - self.start).days)
 
+    def corrected(self, correction) -> "DensityTable":
+        """Same table with log rho shifted by correction(f107a, ap, ALTS) -> (rows, len(ALTS)), the
+        modelled log(true / MSIS) density ratio (see density_bias.py)."""
+        if correction is None:
+            return self
+        shift = correction(self.f107a, self.ap, ALTS)
+        return DensityTable(self.start, self.step, self.logrho + shift, self.f107a, self.ap)
+
 
 def observed_table(sw: dict, start: date, end: date) -> DensityTable:
     """Density from the space weather that actually happened (daily)."""
     days = [start + timedelta(i) for i in range((end - start).days + 1)]
     f, fa, ap = _drivers(days, sw)
     times = np.array([np.datetime64(d.isoformat() + "T12:00") for d in days])
-    return DensityTable(start, 1.0, msis_log_density(times, f, fa, ap))
+    return DensityTable(start, 1.0, msis_log_density(times, f, fa, ap), fa, ap)
 
 
 def persistence_table(sw: dict, issue: date, days_ahead: int, step: int = 5, trend: bool = False) -> DensityTable:
@@ -92,7 +102,7 @@ def persistence_table(sw: dict, issue: date, days_ahead: int, step: int = 5, tre
         fseries = np.full(n, fbar)
     times = np.array([np.datetime64(issue.isoformat() + "T12:00") + np.timedelta64(int(x), "D") for x in ahead])
     lr = msis_log_density(times, fseries, fseries, np.full(n, apbar))
-    return DensityTable(issue, float(step), lr)
+    return DensityTable(issue, float(step), lr, fseries, np.full(n, apbar))
 
 
 def analog_table(hist, issue: date, days_ahead: int, step: int = 5, fade_days: float = 730.0) -> DensityTable:
@@ -103,7 +113,7 @@ def analog_table(hist, issue: date, days_ahead: int, step: int = 5, fade_days: f
     n = days_ahead // step + 2
     ahead = step * np.arange(n)
     times = np.array([np.datetime64(issue.isoformat() + "T12:00") + np.timedelta64(int(x), "D") for x in ahead])
-    return DensityTable(issue, float(step), msis_log_density(times, f[ahead], f[ahead], ap[ahead]))
+    return DensityTable(issue, float(step), msis_log_density(times, f[ahead], f[ahead], ap[ahead]), f[ahead], ap[ahead])
 
 
 def _drivers(days: list[date], sw: dict) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
