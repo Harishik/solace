@@ -4,6 +4,8 @@
 bodies re-enter, with calibrated windows, under solar-cycle uncertainty. Around that core it
 does debris conjunction screening and hypervelocity impact physics, and runs a live sky tracker.
 
+<p align="center"><img src="assets/live_sky.gif" width="760" alt="SOLACE Live Sky: 32,829 tracked objects around a day/night Earth"></p>
+
 ## Re-entry forecasting: the core result
 
 Each object gets a ballistic coefficient fitted from its own orbital decay. It is then
@@ -37,11 +39,15 @@ The physics, methods and every negative result are written up in [docs/PHYSICS.m
 | | |
 |---|---|
 | <img src="assets/sph_impact.gif" alt="SPH Whipple shield impact"> | **Hypervelocity impact.** A 2-D SPH hydrocode (Mie–Grüneisen equation of state) and Whipple-shield ballistic limit equations. Shock pressure matches the exact Hugoniot to 1.3 %, and the debris-cloud half-angle is ~38° (30–45° in experiments). |
+| <img src="assets/live_asteroids.png" alt="Asteroid tracker"> | **Near-Earth asteroids.** A three.js view of the inner Solar System with 2,548 potentially hazardous asteroids at today's positions, upcoming close approaches with their orbits, and MOID computed here (median difference from JPL: 1.2e-4 au). |
+| <img src="assets/live_sky_tonight.png" alt="Sky tonight"> | **Sky tonight.** Planets, bright stars and ISS passes for your location. |
 
-- **Live Sky** web app: a satellite & debris globe, a near-Earth asteroid tracker with MOID, and a planets & stars sky view.
+- **Live Sky** web app (three.js): live SGP4 positions for the whole catalog on a day/night Earth, conjunction alerts for protected assets, orbit tracks, a near-Earth asteroid view and a sky chart.
 - **Catalog**: the full public catalog (~33k objects, ~12k debris and rocket bodies) via COMSPOC Spacebook, with CelesTrak as the fallback.
 - **Conjunctions**: batch SGP4 over the public catalog → time of closest approach (TCA), miss distance, collision probability (2-D Foster Pc), with realistic Spacebook covariances.
 - **Risk**: an orbital-shell graph, an SGP4 physics baseline, a spatio-temporal GNN forecaster, and a per-asset penetration-risk index.
+
+Earth and sky textures are credited in [web/textures/CREDITS.txt](web/textures/CREDITS.txt).
 
 See [PLAN.md](PLAN.md) for the design, data sources and research plan. Figures are rebuilt with
 `scripts/make_figures.py`, and app captures with `scripts/capture_app.py`.
