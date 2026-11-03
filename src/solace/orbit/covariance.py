@@ -104,7 +104,7 @@ def fetch_covariance(norad_id: int) -> CovarianceEphemeris | None:
                           timeout=90)
         return parse_stk_ephemeris(text, norad_id)
     except Exception as exc:
-        print(f"[orbitguard] no Spacebook covariance for {norad_id}: {exc}")
+        print(f"[solace] no Spacebook covariance for {norad_id}: {exc}")
         return None
 
 

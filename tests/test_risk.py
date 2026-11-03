@@ -3,11 +3,11 @@ from datetime import datetime, timezone
 import numpy as np
 import pytest
 
-from orbitguard.ingest.celestrak import parse_tle_text
-from orbitguard.risk import ALT_EDGES, adjacency, asset_risk, build_grid
-from orbitguard.risk.baseline import sgp4_forecast
-from orbitguard.risk.index import size_multiplier
-from orbitguard.risk.shells import residence_weights
+from solace.ingest.celestrak import parse_tle_text
+from solace.risk import ALT_EDGES, adjacency, asset_risk, build_grid
+from solace.risk.baseline import sgp4_forecast
+from solace.risk.index import size_multiplier
+from solace.risk.shells import residence_weights
 
 ISS = """ISS (ZARYA)
 1 25544U 98067A   26294.50000000  .00016717  00000+0  30164-3 0  9993

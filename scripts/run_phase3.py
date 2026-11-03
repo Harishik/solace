@@ -14,10 +14,10 @@ from pathlib import Path
 
 import numpy as np
 
-from orbitguard.risk import adjacency
-from orbitguard.risk.dataset import build_series, load_series, save_series
-from orbitguard.risk.history import SpacebookHistory, cached_spacebook_snapshots
-from orbitguard.risk.model import train
+from solace.risk import adjacency
+from solace.risk.dataset import build_series, load_series, save_series
+from solace.risk.history import SpacebookHistory, cached_spacebook_snapshots
+from solace.risk.model import train
 
 REPORTS = Path("reports")
 SERIES = REPORTS / "phase3_series.npz"

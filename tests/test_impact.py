@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from orbitguard.impact import SingleWall, SPHSolver, WhippleShield
-from orbitguard.impact.sph import Body, lattice_box
+from solace.impact import SingleWall, SPHSolver, WhippleShield
+from solace.impact.sph import Body, lattice_box
 
 
 def test_whipple_ble_continuous_at_regime_boundaries():

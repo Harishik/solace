@@ -1,4 +1,4 @@
-# orbitguard — Project Plan
+# solace — Project Plan
 
 Orbital debris conjunction screening, hypervelocity impact modelling, space-weather-driven risk
 forecasting, and a three-layer live sky tracker. Python library + web app.
@@ -40,10 +40,10 @@ forecasting, and a three-layer live sky tracker. Python library + web app.
                                          risk index          asteroids, sky
    └─────────────────┴──────────┬───────────┴────────────────────┘
                                 ▼
-            cli: `orbitguard screen | impact | forecast | serve`
+            cli: `solace screen | impact | forecast | serve`
 ```
 
-Package layout: `src/orbitguard/{ingest,orbit,impact,risk,live,viz}`, plus `tests/`, `notebooks/` and `web/`.
+Package layout: `src/solace/{ingest,orbit,impact,risk,live,viz}`, plus `tests/`, `notebooks/` and `web/`.
 
 ---
 
@@ -269,7 +269,7 @@ Findings so far, which feed the paper:
     downloads its launch file with gdown and then reads it via a working-directory-relative path,
     which fails. Needs a small patch or a manual download.
 
-- **Phase 3c: per-object re-entry physics** (`src/orbitguard/risk/decay.py`, `reentry.py`,
+- **Phase 3c: per-object re-entry physics** (`src/solace/risk/decay.py`, `reentry.py`,
   `scripts/run_phase3c.py`, `analyze_phase3c.py`; theory in `docs/PHYSICS.md`). 135 issue dates
   every 28 days from June 2016 to Oct 2026, 326k object forecasts (debris and rocket bodies with
   perigee < 600 km), scored against satcat decay dates. Each object gets a ballistic coefficient

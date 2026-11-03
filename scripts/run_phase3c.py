@@ -4,7 +4,7 @@ At each issue date (every 4 weeks), objects with perigee < 600 km get a ballisti
 from their own TLE decay over the previous 3-10 weeks (observed density), then a predicted
 re-entry date under four density scenarios: SGP4 with frozen B* (old baseline), persistence of
 the 81-day solar flux, a solar-cycle analog forecast (earlier cycles read forward from today's
-phase, src/orbitguard/risk/solar.py), and the true future space weather (oracle, upper bound).
+phase, src/solace/risk/solar.py), and the true future space weather (oracle, upper bound).
 Version 2 adds Sun and Moon perturbations (J2 + lunisolar secular rates) to every physics run,
 plus an oracle without them as an ablation. Version 1 results stay in reports/phase3c_v1_rows.npz.
 
@@ -20,11 +20,11 @@ from pathlib import Path
 
 import numpy as np
 
-from orbitguard.ingest.cache import DATA_DIR
-from orbitguard.risk import decay as D
-from orbitguard.risk import reentry as R
-from orbitguard.risk import solar as S
-from orbitguard.risk.drivers import load_space_weather
+from solace.ingest.cache import DATA_DIR
+from solace.risk import decay as D
+from solace.risk import reentry as R
+from solace.risk import solar as S
+from solace.risk.drivers import load_space_weather
 
 OUT = Path("reports/phase3c_rows.npz")  # v2
 HORIZON = 730

@@ -1,4 +1,4 @@
-"""Command line: ``orbitguard screen | impact | risk | validate | serve | history | train``."""
+"""Command line: ``solace screen | impact | risk | validate | serve | history | train``."""
 
 from __future__ import annotations
 
@@ -65,7 +65,7 @@ def cmd_validate(_):
 def cmd_serve(a):
     import uvicorn
 
-    uvicorn.run("orbitguard.live.server:app", host=a.host, port=a.port)
+    uvicorn.run("solace.live.server:app", host=a.host, port=a.port)
 
 
 def cmd_history(a):
@@ -91,7 +91,7 @@ def cmd_train(a):
     else:
         days, src = cached_snapshots(), SpaceTrack.__new__(SpaceTrack)  # on-disk cache only, no login
     if len(days) < a.lookback + a.horizon + 8:
-        sys.exit(f"only {len(days)} cached snapshots; run `orbitguard history` first")
+        sys.exit(f"only {len(days)} cached snapshots; run `solace history` first")
     snaps = {d: type(src).snapshot(src, d) for d in days}
     gs = build_series(snaps, horizon_steps=a.horizon)
     res = train(gs, adjacency(), lookback=a.lookback, epochs=a.epochs)
@@ -99,7 +99,7 @@ def cmd_train(a):
 
 
 def main(argv=None):
-    p = argparse.ArgumentParser(prog="orbitguard")
+    p = argparse.ArgumentParser(prog="solace")
     sub = p.add_subparsers(required=True)
 
     s = sub.add_parser("screen", help="conjunctions for one asset")

@@ -8,8 +8,8 @@ from pathlib import Path
 
 import requests
 
-DATA_DIR = Path(os.environ.get("ORBITGUARD_DATA", Path.cwd() / "data"))
-USER_AGENT = "orbitguard/0.1 (+https://github.com/; research use)"
+DATA_DIR = Path(os.environ.get("SOLACE_DATA", Path.cwd() / "data"))
+USER_AGENT = "solace/0.1 (research use)"
 
 
 def cached_get(url: str, name: str, max_age_s: float = 6 * 3600, timeout: float = 30) -> str:
