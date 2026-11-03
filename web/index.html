@@ -4,94 +4,124 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SOLACE Live Sky</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.120.0/Build/Cesium/Widgets/widgets.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/style.css">
-<script src="https://cdn.jsdelivr.net/npm/cesium@1.120.0/Build/Cesium/Cesium.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
 </head>
 <body>
+<canvas id="scene"></canvas>
+<div id="labels"></div>
+<div id="tooltip" hidden></div>
+
 <header>
-  <div class="brand">SOLACE <span>Live Sky</span></div>
-  <nav>
+  <div class="brand">
+    <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true">
+      <circle cx="16" cy="16" r="6.5" fill="url(#g)"/>
+      <ellipse cx="16" cy="16" rx="14" ry="5.2" fill="none" stroke="#7dd3fc" stroke-width="1.4" transform="rotate(-24 16 16)" opacity=".9"/>
+      <circle cx="28.2" cy="10.6" r="1.8" fill="#fbbf24"/>
+      <defs><radialGradient id="g" cx=".35" cy=".35"><stop offset="0" stop-color="#bae6fd"/><stop offset="1" stop-color="#1d4ed8"/></radialGradient></defs>
+    </svg>
+    <div><b>SOLACE</b><span>Live Sky</span></div>
+  </div>
+  <nav class="seg">
     <button class="tab active" data-view="globe">Satellites &amp; debris</button>
     <button class="tab" data-view="neo">Asteroids</button>
     <button class="tab" data-view="sky">Sky tonight</button>
   </nav>
-  <div id="clock" class="clock"></div>
+  <div class="status">
+    <span id="mode" class="chip live"><i></i>LIVE</span>
+    <span id="clock" class="mono"></span>
+  </div>
 </header>
 
-<main>
-  <!-- A. Satellites & debris -->
-  <section id="view-globe" class="view active">
-    <div id="globe"></div>
-    <aside class="panel">
-      <div class="card">
-        <h3>Catalog</h3>
-        <div id="cat-status" class="muted">Loading catalog…</div>
-        <label><input type="checkbox" data-kind="0" checked> <i class="dot payload"></i> Payloads</label>
-        <label><input type="checkbox" data-kind="1" checked> <i class="dot rb"></i> Rocket bodies</label>
-        <label><input type="checkbox" data-kind="2" checked> <i class="dot deb"></i> Debris</label>
-        <div class="row">Time
-          <button class="rate active" data-rate="1">1×</button>
-          <button class="rate" data-rate="10">10×</button>
-          <button class="rate" data-rate="60">60×</button>
-          <button id="reset" title="Back to now">Now</button>
-        </div>
-      </div>
-      <div class="card">
-        <h3>Space weather</h3>
-        <div id="sw" class="muted">…</div>
-      </div>
-      <div class="card">
-        <h3>Protected assets <span class="muted small">next 3 days</span></h3>
-        <div id="assets" class="muted">Screening…</div>
-      </div>
-      <div class="card" id="obj-card" hidden>
-        <h3 id="obj-name"></h3>
-        <div id="obj-body"></div>
-      </div>
-    </aside>
-  </section>
+<!-- A. Satellites & debris -->
+<section id="view-globe" class="view active">
+  <div class="hud glass">
+    <div class="eyebrow">Tracked objects</div>
+    <div id="cat-total" class="hero mono">—</div>
+    <div id="cat-status" class="muted small">Loading public catalog…</div>
+    <div class="chips">
+      <button class="kind on" data-kind="0"><i class="dot payload"></i>Payloads <b id="n0" class="mono"></b></button>
+      <button class="kind on" data-kind="1"><i class="dot rb"></i>Rocket bodies <b id="n1" class="mono"></b></button>
+      <button class="kind on" data-kind="2"><i class="dot deb"></i>Debris <b id="n2" class="mono"></b></button>
+    </div>
+  </div>
 
-  <!-- B. Asteroids -->
-  <section id="view-neo" class="view">
-    <div id="neo-plot"></div>
-    <aside class="panel">
-      <div class="card">
-        <h3>Next close approach</h3>
-        <div id="neo-next" class="muted">Loading JPL data…</div>
-      </div>
-      <div class="card">
-        <h3>Close approaches <span class="muted small">60 days, &lt; 0.05 au</span></h3>
-        <div id="neo-cad"></div>
-      </div>
-      <div class="card">
-        <h3>Sentry impact-risk list</h3>
-        <div id="neo-sentry"></div>
-      </div>
-    </aside>
-  </section>
+  <aside class="panel">
+    <div class="card glass" id="obj-card" hidden>
+      <div class="card-head"><div><div class="eyebrow" id="obj-kind"></div><h3 id="obj-name"></h3></div>
+        <button class="icon" id="obj-close" aria-label="Close">✕</button></div>
+      <div id="obj-body"></div>
+    </div>
+    <div class="card glass">
+      <div class="eyebrow">Space weather</div>
+      <div id="sw" class="muted">…</div>
+    </div>
+    <div class="card glass">
+      <div class="eyebrow">Protected assets <span class="muted">· conjunctions, next 3 days</span></div>
+      <div id="assets" class="muted">Screening…</div>
+    </div>
+  </aside>
 
-  <!-- C. Sky -->
-  <section id="view-sky" class="view">
-    <div class="sky-wrap"><canvas id="sky"></canvas></div>
-    <aside class="panel">
-      <div class="card">
-        <h3>Location</h3>
-        <div id="loc" class="muted">Cape Canaveral (default)</div>
-        <button id="geo">Use my location</button>
-      </div>
-      <div class="card">
-        <h3>Planets &amp; Moon</h3>
-        <div id="sky-bodies"></div>
-      </div>
-      <div class="card">
-        <h3>ISS passes <span class="muted small">48 h</span></h3>
-        <div id="sky-passes"></div>
-      </div>
-    </aside>
-  </section>
-</main>
-<script src="/static/app.js"></script>
+  <div class="dock glass">
+    <span class="muted small">Time</span>
+    <div class="seg small">
+      <button class="rate active" data-rate="1">1×</button>
+      <button class="rate" data-rate="10">10×</button>
+      <button class="rate" data-rate="60">60×</button>
+      <button class="rate" data-rate="600">600×</button>
+    </div>
+    <button id="reset" class="ghost">Now</button>
+  </div>
+  <div class="hint muted small">Drag to rotate · scroll to zoom · click an object</div>
+</section>
+
+<!-- B. Asteroids -->
+<section id="view-neo" class="view">
+  <div class="hud glass">
+    <div class="eyebrow">Next close approach</div>
+    <div id="neo-next" class="muted">Loading JPL data…</div>
+  </div>
+  <aside class="panel">
+    <div class="card glass">
+      <div class="eyebrow">Close approaches <span class="muted">· 60 days, &lt; 0.05 au</span></div>
+      <div id="neo-cad"></div>
+    </div>
+    <div class="card glass">
+      <div class="eyebrow">Sentry impact-risk list</div>
+      <div id="neo-sentry"></div>
+    </div>
+  </aside>
+  <div class="hint muted small">Inner Solar System, true positions today · click a close approach to draw its orbit</div>
+</section>
+
+<!-- C. Sky -->
+<section id="view-sky" class="view">
+  <div class="sky-wrap"><canvas id="sky"></canvas></div>
+  <aside class="panel">
+    <div class="card glass">
+      <div class="eyebrow">Location</div>
+      <div id="loc" class="muted">Cape Canaveral (default)</div>
+      <button id="geo" class="ghost" style="margin-top:10px">Use my location</button>
+    </div>
+    <div class="card glass">
+      <div class="eyebrow">Planets &amp; Moon</div>
+      <div id="sky-bodies"></div>
+    </div>
+    <div class="card glass">
+      <div class="eyebrow">ISS passes <span class="muted">· 48 h</span></div>
+      <div id="sky-passes"></div>
+    </div>
+  </aside>
+</section>
+
+<script type="module" src="/static/app.js"></script>
 </body>
 </html>
