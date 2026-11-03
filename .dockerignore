@@ -1,0 +1,9 @@
+.venv
+data
+reports
+notebooks
+.git
+.github
+.claude
+**/__pycache__
+*.egg-info

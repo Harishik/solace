@@ -1,0 +1,15 @@
+# Render Blueprint: connect the GitHub repo at dashboard.render.com -> New -> Blueprint.
+# Measured in Docker with the full 33k-object catalog: 399 MiB peak during startup screening,
+# ~430 MiB with all three layers loaded. That fits the free plan's 512 MB with little headroom;
+# switch to "starter" if the instance gets restarted for memory. Free instances also sleep when
+# idle, and the first visit afterwards waits several minutes while the catalog reloads and the
+# protected assets are re-screened.
+services:
+  - type: web
+    name: orbitguard-live-sky
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/status
+    envVars:
+      - key: ORBITGUARD_DATA
+        value: /data

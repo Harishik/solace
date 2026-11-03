@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "live-sky",
+      "runtimeExecutable": ".venv/bin/uvicorn",
+      "runtimeArgs": ["orbitguard.live.server:app", "--port", "8000"],
+      "port": 8000
+    }
+  ]
+}

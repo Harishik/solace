@@ -1,0 +1,247 @@
+{
+ "days": [
+  "2016-01-04",
+  "2026-10-26"
+ ],
+ "n_snapshots": 565,
+ "horizon_weeks": 4,
+ "lookback": 6,
+ "runs": {
+  "full": [
+   {
+    "val": {
+     "gnn_rmse": 0.18445780873298645,
+     "persistence_rmse": 0.18765436161139804,
+     "physics_rmse": 0.17962524469316118,
+     "physics_plus_residual_rmse": 0.2648128095031004,
+     "gnn_rate_rmse_log10": 0.42127376794815063,
+     "n_windows": 113,
+     "storm": {
+      "gnn_rmse": 0.20676542818546295,
+      "persistence_rmse": 0.20261011735407083,
+      "physics_rmse": 0.20400565403456725,
+      "physics_plus_residual_rmse": 0.30450018062685547,
+      "gnn_rate_rmse_log10": 0.42444318532943726,
+      "n_windows": 15
+     }
+    },
+    "test": {
+     "gnn_rmse": 0.20938843488693237,
+     "persistence_rmse": 0.21298781339143782,
+     "physics_rmse": 0.20347022152095007,
+     "physics_plus_residual_rmse": 0.31534876684353225,
+     "gnn_rate_rmse_log10": 0.4781467318534851,
+     "n_windows": 109,
+     "storm": {
+      "gnn_rmse": 0.20987330377101898,
+      "persistence_rmse": 0.21391617553739206,
+      "physics_rmse": 0.2065158508490053,
+      "physics_plus_residual_rmse": 0.33264502142709157,
+      "gnn_rate_rmse_log10": 0.43570175766944885,
+      "n_windows": 15
+     }
+    }
+   },
+   {
+    "val": {
+     "gnn_rmse": 0.17888246476650238,
+     "persistence_rmse": 0.18765436161139804,
+     "physics_rmse": 0.17962524469316118,
+     "physics_plus_residual_rmse": 0.2648128095031004,
+     "gnn_rate_rmse_log10": 0.4747474491596222,
+     "n_windows": 113,
+     "storm": {
+      "gnn_rmse": 0.20245347917079926,
+      "persistence_rmse": 0.20261011735407083,
+      "physics_rmse": 0.20400565403456725,
+      "physics_plus_residual_rmse": 0.30450018062685547,
+      "gnn_rate_rmse_log10": 0.4885498285293579,
+      "n_windows": 15
+     }
+    },
+    "test": {
+     "gnn_rmse": 0.2038688361644745,
+     "persistence_rmse": 0.21298781339143782,
+     "physics_rmse": 0.20347022152095007,
+     "physics_plus_residual_rmse": 0.31534876684353225,
+     "gnn_rate_rmse_log10": 0.5268003940582275,
+     "n_windows": 109,
+     "storm": {
+      "gnn_rmse": 0.2067112773656845,
+      "persistence_rmse": 0.21391617553739206,
+      "physics_rmse": 0.2065158508490053,
+      "physics_plus_residual_rmse": 0.33264502142709157,
+      "gnn_rate_rmse_log10": 0.4880003333091736,
+      "n_windows": 15
+     }
+    }
+   }
+  ],
+  "no_space_weather": [
+   {
+    "val": {
+     "gnn_rmse": 0.17764343321323395,
+     "persistence_rmse": 0.18765436161139804,
+     "physics_rmse": 0.17962524469316118,
+     "physics_plus_residual_rmse": 0.2648128095031004,
+     "gnn_rate_rmse_log10": 0.3886108994483948,
+     "n_windows": 113,
+     "storm": {
+      "gnn_rmse": 0.200635626912117,
+      "persistence_rmse": 0.20261011735407083,
+      "physics_rmse": 0.20400565403456725,
+      "physics_plus_residual_rmse": 0.30450018062685547,
+      "gnn_rate_rmse_log10": 0.4032042324542999,
+      "n_windows": 15
+     }
+    },
+    "test": {
+     "gnn_rmse": 0.2037670612335205,
+     "persistence_rmse": 0.21298781339143782,
+     "physics_rmse": 0.20347022152095007,
+     "physics_plus_residual_rmse": 0.31534876684353225,
+     "gnn_rate_rmse_log10": 0.4635753929615021,
+     "n_windows": 109,
+     "storm": {
+      "gnn_rmse": 0.20449760556221008,
+      "persistence_rmse": 0.21391617553739206,
+      "physics_rmse": 0.2065158508490053,
+      "physics_plus_residual_rmse": 0.33264502142709157,
+      "gnn_rate_rmse_log10": 0.4134964942932129,
+      "n_windows": 15
+     }
+    }
+   },
+   {
+    "val": {
+     "gnn_rmse": 0.17797784507274628,
+     "persistence_rmse": 0.18765436161139804,
+     "physics_rmse": 0.17962524469316118,
+     "physics_plus_residual_rmse": 0.2648128095031004,
+     "gnn_rate_rmse_log10": 0.4049850106239319,
+     "n_windows": 113,
+     "storm": {
+      "gnn_rmse": 0.20161667466163635,
+      "persistence_rmse": 0.20261011735407083,
+      "physics_rmse": 0.20400565403456725,
+      "physics_plus_residual_rmse": 0.30450018062685547,
+      "gnn_rate_rmse_log10": 0.42113637924194336,
+      "n_windows": 15
+     }
+    },
+    "test": {
+     "gnn_rmse": 0.2021842896938324,
+     "persistence_rmse": 0.21298781339143782,
+     "physics_rmse": 0.20347022152095007,
+     "physics_plus_residual_rmse": 0.31534876684353225,
+     "gnn_rate_rmse_log10": 0.47053152322769165,
+     "n_windows": 109,
+     "storm": {
+      "gnn_rmse": 0.20448456704616547,
+      "persistence_rmse": 0.21391617553739206,
+      "physics_rmse": 0.2065158508490053,
+      "physics_plus_residual_rmse": 0.33264502142709157,
+      "gnn_rate_rmse_log10": 0.41726329922676086,
+      "n_windows": 15
+     }
+    }
+   }
+  ],
+  "no_graph": [
+   {
+    "val": {
+     "gnn_rmse": 0.18719589710235596,
+     "persistence_rmse": 0.18765436161139804,
+     "physics_rmse": 0.17962524469316118,
+     "physics_plus_residual_rmse": 0.2648128095031004,
+     "gnn_rate_rmse_log10": 0.38032853603363037,
+     "n_windows": 113,
+     "storm": {
+      "gnn_rmse": 0.2115688920021057,
+      "persistence_rmse": 0.20261011735407083,
+      "physics_rmse": 0.20400565403456725,
+      "physics_plus_residual_rmse": 0.30450018062685547,
+      "gnn_rate_rmse_log10": 0.3864710330963135,
+      "n_windows": 15
+     }
+    },
+    "test": {
+     "gnn_rmse": 0.21357396245002747,
+     "persistence_rmse": 0.21298781339143782,
+     "physics_rmse": 0.20347022152095007,
+     "physics_plus_residual_rmse": 0.31534876684353225,
+     "gnn_rate_rmse_log10": 0.447360634803772,
+     "n_windows": 109,
+     "storm": {
+      "gnn_rmse": 0.2150420993566513,
+      "persistence_rmse": 0.21391617553739206,
+      "physics_rmse": 0.2065158508490053,
+      "physics_plus_residual_rmse": 0.33264502142709157,
+      "gnn_rate_rmse_log10": 0.4309563934803009,
+      "n_windows": 15
+     }
+    }
+   },
+   {
+    "val": {
+     "gnn_rmse": 0.17900873720645905,
+     "persistence_rmse": 0.18765436161139804,
+     "physics_rmse": 0.17962524469316118,
+     "physics_plus_residual_rmse": 0.2648128095031004,
+     "gnn_rate_rmse_log10": 0.373353511095047,
+     "n_windows": 113,
+     "storm": {
+      "gnn_rmse": 0.2034914344549179,
+      "persistence_rmse": 0.20261011735407083,
+      "physics_rmse": 0.20400565403456725,
+      "physics_plus_residual_rmse": 0.30450018062685547,
+      "gnn_rate_rmse_log10": 0.3819728195667267,
+      "n_windows": 15
+     }
+    },
+    "test": {
+     "gnn_rmse": 0.20404057204723358,
+     "persistence_rmse": 0.21298781339143782,
+     "physics_rmse": 0.20347022152095007,
+     "physics_plus_residual_rmse": 0.31534876684353225,
+     "gnn_rate_rmse_log10": 0.4284002482891083,
+     "n_windows": 109,
+     "storm": {
+      "gnn_rmse": 0.20748715102672577,
+      "persistence_rmse": 0.21391617553739206,
+      "physics_rmse": 0.2065158508490053,
+      "physics_plus_residual_rmse": 0.33264502142709157,
+      "gnn_rate_rmse_log10": 0.4060152471065521,
+      "n_windows": 15
+     }
+    }
+   }
+  ]
+ },
+ "summary_test_mean": {
+  "full": {
+   "gnn_rmse": 0.20662863552570343,
+   "physics_rmse": 0.20347022152095007,
+   "persistence_rmse": 0.21298781339143782,
+   "physics_plus_residual_rmse": 0.31534876684353225,
+   "storm_gnn_rmse": 0.20829229056835175,
+   "storm_physics_plus_residual_rmse": 0.33264502142709157
+  },
+  "no_space_weather": {
+   "gnn_rmse": 0.20297567546367645,
+   "physics_rmse": 0.20347022152095007,
+   "persistence_rmse": 0.21298781339143782,
+   "physics_plus_residual_rmse": 0.31534876684353225,
+   "storm_gnn_rmse": 0.20449108630418777,
+   "storm_physics_plus_residual_rmse": 0.33264502142709157
+  },
+  "no_graph": {
+   "gnn_rmse": 0.20880726724863052,
+   "physics_rmse": 0.20347022152095007,
+   "persistence_rmse": 0.21298781339143782,
+   "physics_plus_residual_rmse": 0.31534876684353225,
+   "storm_gnn_rmse": 0.21126462519168854,
+   "storm_physics_plus_residual_rmse": 0.33264502142709157
+  }
+ }
+}
