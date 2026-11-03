@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 import numpy as np
 import pytest
 
-from orbitguard.orbit.covariance import parse_stk_ephemeris
+from solace.orbit.covariance import parse_stk_ephemeris
 
 TRI = " ".join(["4.0", "0.5", "1.0", "0.0", "0.0", "9.0"] + ["0.0"] * 15)
 TRI2 = " ".join(["8.0", "0.0", "2.0", "0.0", "0.0", "9.0"] + ["0.0"] * 15)

@@ -1,6 +1,6 @@
 """Live Sky server: satellites/debris (WebSocket), near-Earth asteroids and the local sky.
 
-Run with ``orbitguard serve`` (or ``uvicorn orbitguard.live.server:app``) and open http://localhost:8000.
+Run with ``solace serve`` (or ``uvicorn solace.live.server:app``) and open http://localhost:8000.
 """
 
 from __future__ import annotations
@@ -28,13 +28,13 @@ from . import neo, sky
 
 
 def _web_dir() -> Path:
-    """Front-end folder: $ORBITGUARD_WEB, else ./web (Docker, repo root), else the source checkout."""
-    if os.environ.get("ORBITGUARD_WEB"):
-        return Path(os.environ["ORBITGUARD_WEB"])
+    """Front-end folder: $SOLACE_WEB, else ./web (Docker, repo root), else the source checkout."""
+    if os.environ.get("SOLACE_WEB"):
+        return Path(os.environ["SOLACE_WEB"])
     for p in (Path.cwd() / "web", Path(__file__).resolve().parents[3] / "web"):
         if (p / "index.html").exists():
             return p
-    raise RuntimeError("web/ not found; set ORBITGUARD_WEB")
+    raise RuntimeError("web/ not found; set SOLACE_WEB")
 
 
 WEB_DIR = _web_dir()
@@ -101,7 +101,7 @@ class State:
             try:
                 self._publish(norad_id, rescore(events, spacebook_provider), "spacebook")
             except Exception as exc:
-                print(f"[orbitguard] Spacebook re-score failed for {norad_id}: {exc}")
+                print(f"[solace] Spacebook re-score failed for {norad_id}: {exc}")
         # Parsed covariance files are ~2 MB each; free them so a small host stays under its limit.
         from ..orbit.covariance import fetch_covariance
 
@@ -181,7 +181,7 @@ class SafeJSONResponse(JSONResponse):
 
 
 STATE = State()
-app = FastAPI(title="orbitguard Live Sky", default_response_class=SafeJSONResponse)
+app = FastAPI(title="solace Live Sky", default_response_class=SafeJSONResponse)
 
 
 @app.on_event("startup")

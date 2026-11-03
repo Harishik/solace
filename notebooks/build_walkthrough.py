@@ -8,7 +8,7 @@ from nbclient import NotebookClient
 md, code = nbf.v4.new_markdown_cell, nbf.v4.new_code_cell
 
 cells = [
-    md("""# orbitguard walkthrough
+    md("""# solace walkthrough
 
 One end-to-end pass through the library, using live public data:
 
@@ -25,15 +25,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 plt.rcParams.update({"figure.dpi": 110, "axes.grid": True, "grid.alpha": 0.3})
 
-from orbitguard.ingest.celestrak import fetch_catalog
+from solace.ingest.celestrak import fetch_catalog
 catalog = fetch_catalog()
 by_id = {t.norad_id: t for t in catalog}
 kinds = np.array([2 if t.is_debris else 0 for t in catalog])
 print(f"{len(catalog):,} objects, {int((kinds == 2).sum()):,} debris/rocket bodies")"""),
     md("## 1. Conjunction screening for NISAR (next 3 days)"),
     code("""import time
-from orbitguard.orbit import rescore, screen
-from orbitguard.orbit.covariance import spacebook_provider
+from solace.orbit import rescore, screen
+from solace.orbit.covariance import spacebook_provider
 
 nisar = by_id[65053]
 t = time.time()
@@ -53,7 +53,7 @@ for row in rows:
 The Christiansen Whipple-shield BLE gives the smallest aluminium particle that perforates the rear
 wall. Below 3 km/s the projectile stays intact (ballistic); above 7 km/s it shatters on the bumper
 and the debris cloud spreads. That's why the curve *rises* between 3 and 7 km/s."""),
-    code("""from orbitguard.impact import WhippleShield, SingleWall
+    code("""from solace.impact import WhippleShield, SingleWall
 v = np.linspace(1, 15, 300)
 fig, ax = plt.subplots(figsize=(7, 4))
 for label, s in [("ISS-like (1.3/4.8 mm, 114 mm gap)", WhippleShield(0.127, 0.48, 11.4)),
@@ -66,7 +66,7 @@ for c in assumed[:10]:
 ax.set(xlabel="impact speed (km/s)", ylabel="critical diameter (mm)", yscale="log",
        title="Ballistic limit; grey lines = speeds of NISAR's approaches")
 ax.legend(fontsize=8); plt.show()"""),
-    code("""from orbitguard.impact import WhippleImpact, damage_metrics
+    code("""from solace.impact import WhippleImpact, damage_metrics
 sc = WhippleImpact(projectile_diameter=2.0, speed=7.0, resolution=0.15)
 sol = sc.build(); pos0 = sol.state.pos0.copy()
 t = time.time(); frames = sol.run(sc.time_to_rear_wall() * 1.3, snapshots=4)
@@ -81,7 +81,7 @@ for ax, f in zip(axes, frames):
     ax.set(title=f"t = {f['t']:.2f} µs", xlim=(-12, 12), aspect="equal"); ax.grid(False)
 axes[0].set_ylabel("mm"); plt.tight_layout(); plt.show()"""),
     md("## 3. Orbital-shell grid and debris exposure"),
-    code("""from orbitguard.risk import ALT_EDGES, INC_EDGES, build_grid, asset_risk
+    code("""from solace.risk import ALT_EDGES, INC_EDGES, build_grid, asset_risk
 grid = build_grid(catalog)
 fig, ax = plt.subplots(1, 2, figsize=(12, 4))
 alt = 0.5 * (ALT_EDGES[:-1] + ALT_EDGES[1:])
@@ -102,14 +102,14 @@ for r in reps:
           f"P(penetration, 100 m2, 1 yr) = {r.p_penetration:.2%}")
 print("\\nSmall-debris slopes are uncalibrated defaults; compare ratios between assets, not absolutes.")"""),
     md("## 4. Asteroids: our MOID vs JPL's"),
-    code("""from orbitguard.live import neo
+    code("""from solace.live import neo
 pha = neo.fetch_population("pha")
 rng = np.random.default_rng(1)
 sample = [pha[i] for i in rng.choice(len(pha), 80, replace=False)]
 ours = np.array([neo.moid(o) for o in sample]); jpl = np.array([o.jpl_moid for o in sample])
 fig, ax = plt.subplots(figsize=(4.5, 4.5))
 ax.scatter(jpl, ours, s=10); ax.plot([0, 0.05], [0, 0.05], "k--", lw=0.8)
-ax.set(xlabel="JPL MOID (au)", ylabel="orbitguard MOID (au)", title="Earth MOID, 80 random PHAs")
+ax.set(xlabel="JPL MOID (au)", ylabel="solace MOID (au)", title="Earth MOID, 80 random PHAs")
 plt.show()
 d = np.abs(ours - jpl)
 print(f"median |diff| {np.median(d):.1e} au ({np.median(d) / neo.LD_AU:.3f} lunar distances), max {d.max():.1e} au")"""),
@@ -119,14 +119,14 @@ Phase 3 (forecasting) needs historical catalog snapshots from Space-Track.org:
 
 ```bash
 export SPACETRACK_USER=...  SPACETRACK_PASS=...
-orbitguard history --start 2021-01-04 --end 2026-10-01 --step 7
-orbitguard train --horizon 4
+solace history --start 2021-01-04 --end 2026-10-01 --step 7
+solace train --horizon 4
 ```"""),
 ]
 
-nb = nbf.v4.new_notebook(cells=cells, metadata={"kernelspec": {"name": "orbitguard", "display_name": "orbitguard (.venv)",
+nb = nbf.v4.new_notebook(cells=cells, metadata={"kernelspec": {"name": "solace", "display_name": "solace (.venv)",
                                                                 "language": "python"}})
 out = Path("notebooks/walkthrough.ipynb")
-NotebookClient(nb, timeout=1800, kernel_name="orbitguard", resources={"metadata": {"path": "."}}).execute()
+NotebookClient(nb, timeout=1800, kernel_name="solace", resources={"metadata": {"path": "."}}).execute()
 nbf.write(nb, out)
 print(f"wrote {out}")

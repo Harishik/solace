@@ -64,7 +64,7 @@ def fetch_flares(days: int = 60, api_key: str | None = None) -> list[tuple[datet
     try:
         rows = json.loads(cached_get(url, f"donki_flr_{start}_{end}.json") or "[]")
     except Exception as exc:
-        print(f"[orbitguard] DONKI unavailable ({exc}); continuing without flare features")
+        print(f"[solace] DONKI unavailable ({exc}); continuing without flare features")
         return []
     out = []
     for r in rows:

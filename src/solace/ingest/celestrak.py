@@ -96,9 +96,9 @@ def fetch_catalog(source: str = "full") -> list[TLE]:
             tles = fetch_spacebook_catalog()
             if len(tles) > 10000:
                 return tles
-            print(f"[orbitguard] Spacebook catalog looks short ({len(tles)}); using CelesTrak")
+            print(f"[solace] Spacebook catalog looks short ({len(tles)}); using CelesTrak")
         except Exception as exc:
-            print(f"[orbitguard] Spacebook catalog unavailable ({exc}); using CelesTrak")
+            print(f"[solace] Spacebook catalog unavailable ({exc}); using CelesTrak")
     return fetch_celestrak_groups(fallback=source != "full")
 
 
@@ -117,14 +117,14 @@ def fetch_celestrak_groups(groups=DEBRIS_GROUPS + ("active",), fallback: bool = 
                 seen.setdefault(t.norad_id, t)
         except Exception as exc:  # one dead group shouldn't sink the run
             failed.append(g)
-            print(f"[orbitguard] skipping group {g}: {exc}")
+            print(f"[solace] skipping group {g}: {exc}")
     if fallback and "active" in failed:
         from .spacebook import fetch_spacebook_catalog
 
         try:
             for t in fetch_spacebook_catalog():
                 seen.setdefault(t.norad_id, t)
-            print("[orbitguard] used Spacebook catalog as fallback")
+            print("[solace] used Spacebook catalog as fallback")
         except Exception as exc:
-            print(f"[orbitguard] Spacebook fallback failed: {exc}")
+            print(f"[solace] Spacebook fallback failed: {exc}")
     return list(seen.values())

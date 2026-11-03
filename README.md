@@ -1,15 +1,50 @@
-# orbitguard
+# SOLACE
 
-Orbital debris conjunction screening, hypervelocity impact modelling, space-weather-driven risk
-forecasting, and a three-layer live sky tracker.
+**Solar-cycle-Aware Lifetime And Conformal Estimation.** It forecasts when debris and rocket
+bodies re-enter, with calibrated windows, under solar-cycle uncertainty. Around that core it
+does debris conjunction screening and hypervelocity impact physics, and runs a live sky tracker.
 
-- **Catalog**: the full public catalog (~33k objects, ~12k debris and rocket bodies) via COMSPOC Spacebook, with CelesTrak as the fallback.
-- **Conjunctions**: batch SGP4 over the public catalog → time of closest approach (TCA), miss distance, collision probability (2-D Foster Pc).
-- **Impact physics**: Whipple-shield ballistic limit equations, plus a 2-D SPH hydrocode with a Mie–Grüneisen equation of state.
-- **Risk**: an orbital-shell graph, an SGP4 physics baseline, a spatio-temporal GNN forecaster, and a per-asset penetration-risk index.
+## Re-entry forecasting: the core result
+
+Each object gets a ballistic coefficient fitted from its own orbital decay. It is then
+propagated through NRLMSIS 2.0 density with J2 and Sun/Moon perturbations, under a forecast of
+the solar cycle. This was tested on 135 forecast dates from 2016 to 2026 (326k forecasts,
+39,814 re-entries), using only data available on each date.
+
+<p align="center"><img src="assets/headline_error.png" width="720" alt="Median 1-year re-entry timing error by method"></p>
+
+| | |
+|---|---|
+| <img src="assets/solar_analog.gif" alt="Solar-cycle analog forecast"> | <img src="assets/error_by_year.png" alt="Error by year"> |
+| Earlier solar cycles are read forward from today's phase and rescaled to today's flux. | Holding today's flux fails when the cycle turns: 57 % error in 2021, against 15 % with the cycle forecast. |
+
+<p align="center"><img src="assets/gto_reentry.gif" width="760" alt="Eccentric rocket body perigee with and without Sun and Moon"></p>
+
+For highly eccentric orbits (GTO, Molniya), the Sun and Moon pull perigee down into the
+atmosphere. Above is a Soviet SL-6 upper stage with a 40,000 km apogee. Without the Sun and Moon
+it never re-enters; with them it re-enters 27 days before the real date (April 2025). Across all
+e ≥ 0.2 objects, the error falls from 34 % to 16 %.
+
+| | |
+|---|---|
+| <img src="assets/lunisolar_ablation.png" alt="Sun and Moon ablation"> | <img src="assets/window_coverage.png" alt="80 % window coverage by year"> |
+| Sun/Moon perturbations only matter for eccentric orbits. | Online-calibrated 80 % windows: 77 % coverage over the decade, but 56 % in 2025 after the Cycle 25 maximum. |
+
+The physics, methods and every negative result are written up in [docs/PHYSICS.md](docs/PHYSICS.md).
+
+## Also in the box
+
+| | |
+|---|---|
+| <img src="assets/sph_impact.gif" alt="SPH Whipple shield impact"> | **Hypervelocity impact.** A 2-D SPH hydrocode (Mie–Grüneisen equation of state) and Whipple-shield ballistic limit equations. Shock pressure matches the exact Hugoniot to 1.3 %, and the debris-cloud half-angle is ~38° (30–45° in experiments). |
+
 - **Live Sky** web app: a satellite & debris globe, a near-Earth asteroid tracker with MOID, and a planets & stars sky view.
+- **Catalog**: the full public catalog (~33k objects, ~12k debris and rocket bodies) via COMSPOC Spacebook, with CelesTrak as the fallback.
+- **Conjunctions**: batch SGP4 over the public catalog → time of closest approach (TCA), miss distance, collision probability (2-D Foster Pc), with realistic Spacebook covariances.
+- **Risk**: an orbital-shell graph, an SGP4 physics baseline, a spatio-temporal GNN forecaster, and a per-asset penetration-risk index.
 
-See [PLAN.md](PLAN.md) for the design, data sources and research plan.
+See [PLAN.md](PLAN.md) for the design, data sources and research plan. Figures are rebuilt with
+`scripts/make_figures.py`, and app captures with `scripts/capture_app.py`.
 
 ## Install
 
@@ -21,11 +56,11 @@ python3 -m venv .venv
 ## Use
 
 ```bash
-.venv/bin/orbitguard screen NISAR --days 3
-.venv/bin/orbitguard risk NISAR --days 365 --area 100
-.venv/bin/orbitguard impact --speed 7 --sph --html reports/whipple_7kms.html
-.venv/bin/orbitguard validate
-.venv/bin/orbitguard serve
+.venv/bin/solace screen NISAR --days 3
+.venv/bin/solace risk NISAR --days 365 --area 100
+.venv/bin/solace impact --speed 7 --sph --html reports/whipple_7kms.html
+.venv/bin/solace validate
+.venv/bin/solace serve
 ```
 
 `serve` starts the Live Sky app at http://127.0.0.1:8000.
@@ -35,8 +70,8 @@ A full walkthrough with figures is in [notebooks/walkthrough.ipynb](notebooks/wa
 ## Deploy the Live Sky demo
 
 ```bash
-docker build -t orbitguard .
-docker run -p 8000:8000 orbitguard
+docker build -t solace .
+docker run -p 8000:8000 solace
 ```
 
 To host it, push the repo to GitHub, then in Render go to New → Blueprint and select the repo; it reads [render.yaml](render.yaml). Measured in Docker with the full catalog, the server uses about 430 MiB (399 MiB peak during startup). That fits the free 512 MB plan with little headroom, so use the Starter plan if Render restarts it for memory. Free instances sleep when idle, and the first visit afterwards takes several minutes while the catalog reloads and the protected assets are re-screened.
@@ -53,7 +88,7 @@ CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs lint and the offl
 Training the forecaster uses historical catalog snapshots. By default they come from COMSPOC Spacebook, which needs no account (about 1.6 GB for weekly snapshots 2016–2026):
 
 ```bash
-.venv/bin/orbitguard history --start 2016-01-04 --end 2026-10-26 --step 7
+.venv/bin/solace history --start 2016-01-04 --end 2026-10-26 --step 7
 .venv/bin/python scripts/run_phase3.py --seeds 2 --epochs 150
 ```
 

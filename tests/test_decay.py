@@ -2,7 +2,7 @@ from datetime import date
 
 import numpy as np
 
-from orbitguard.risk import decay as D
+from solace.risk import decay as D
 
 
 def _exp_table(rho0=1e-11, h0=300.0, scale=50.0, days=400):

@@ -20,11 +20,11 @@ import torch
 sys.path.insert(0, str(Path(__file__).parent))
 from run_phase3 import SPACE_WEATHER_FEATURES, weekly  # noqa: E402
 
-from orbitguard.risk import adjacency  # noqa: E402
-from orbitguard.risk.cohort import build_cohort_series  # noqa: E402
-from orbitguard.risk.dataset import GraphSeries  # noqa: E402
-from orbitguard.risk.history import SpacebookHistory, cached_spacebook_snapshots  # noqa: E402
-from orbitguard.risk.model import _windows, train  # noqa: E402
+from solace.risk import adjacency  # noqa: E402
+from solace.risk.cohort import build_cohort_series  # noqa: E402
+from solace.risk.dataset import GraphSeries  # noqa: E402
+from solace.risk.history import SpacebookHistory, cached_spacebook_snapshots  # noqa: E402
+from solace.risk.model import _windows, train  # noqa: E402
 
 REPORTS = Path("reports")
 HORIZONS = (4, 13, 26)  # weeks: ~1, 3, 6 months

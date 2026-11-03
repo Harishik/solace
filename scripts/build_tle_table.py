@@ -2,8 +2,8 @@
 import time
 from pathlib import Path
 
-from orbitguard.ingest.cache import DATA_DIR
-from orbitguard.risk.reentry import build_tle_table
+from solace.ingest.cache import DATA_DIR
+from solace.risk.reentry import build_tle_table
 
 files = sorted((Path(DATA_DIR) / "history").glob("sb_*.tle"))
 t = time.time()

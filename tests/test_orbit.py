@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 
-from orbitguard.ingest.celestrak import parse_tle_text
-from orbitguard.orbit.conjunction import collision_probability
-from orbitguard.orbit.propagate import Propagator, jday_array, orbit_shell, teme_to_geodetic
+from solace.ingest.celestrak import parse_tle_text
+from solace.orbit.conjunction import collision_probability
+from solace.orbit.propagate import Propagator, jday_array, orbit_shell, teme_to_geodetic
 
 ISS = """ISS (ZARYA)
 1 25544U 98067A   26294.50000000  .00016717  00000+0  30164-3 0  9993
@@ -68,7 +68,7 @@ def test_pc_ignores_miss_component_along_velocity():
 
 
 def test_alpha5_catalog_numbers():
-    from orbitguard.ingest.celestrak import decode_catnr
+    from solace.ingest.celestrak import decode_catnr
 
     assert decode_catnr("25544") == 25544
     assert decode_catnr("A0000") == 100000

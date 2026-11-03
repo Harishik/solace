@@ -6,10 +6,10 @@
 # protected assets are re-screened.
 services:
   - type: web
-    name: orbitguard-live-sky
+    name: solace-live-sky
     runtime: docker
     plan: free
     healthCheckPath: /api/status
     envVars:
-      - key: ORBITGUARD_DATA
+      - key: SOLACE_DATA
         value: /data
