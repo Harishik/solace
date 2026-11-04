@@ -40,15 +40,25 @@ e ≥ 0.2 objects, the error falls from 34 % to 16 %.
 
 The physics, methods and every negative result are written up in [docs/PHYSICS.md](docs/PHYSICS.md).
 
+## Live Sky
+
+The web app (three.js, `solace serve`) shows the whole public catalogue live in an inertial frame:
+the Earth turns under it at true sidereal rate, at up to 600× speed.
+
+| | |
+|---|---|
+| <img src="assets/live_iss.gif" alt="Riding along with the ISS"> | **Ride along with any object.** Zoom from the whole catalogue down to a single spacecraft. Near the camera, objects become 3-D models (satellites, rocket bodies, tumbling debris; detailed ISS and Hubble), dark when they are in Earth's shadow. Double-click any object to follow it in its own orbital frame, with live altitude, speed, ground position and lighting. |
+| <img src="assets/live_reentry.png" alt="Re-entry watch"> | **Re-entry watch.** The paper's forecast, issued daily on today's catalogue (`scripts/reentry_watch.py`): fitted drag, density-corrected NRLMSIS, NASA MSFC flux forecast, and 80 % windows calibrated on the 2016–2026 hindcast of the same method. Click an object for its date, window and ground track. |
+| <img src="assets/live_sky_tonight.png" alt="Sky tonight"> | **Sky tonight.** The sky from your location, first-person: stars, constellations, planets, the Moon's phase, ISS passes, and every tracked satellite above your horizon right now, drawn bright when sunlit and dim in Earth's shadow, with naked-eye candidates listed. |
+
 ## Also in the box
 
 | | |
 |---|---|
 | <img src="assets/sph_impact.gif" alt="SPH Whipple shield impact"> | **Hypervelocity impact.** A 2-D SPH hydrocode (Mie–Grüneisen equation of state) and Whipple-shield ballistic limit equations. Shock pressure matches the exact Hugoniot to 1.3 %, and the debris-cloud half-angle is ~38° (30–45° in experiments). |
 | <img src="assets/live_asteroids.png" alt="Asteroid tracker"> | **Near-Earth asteroids.** A three.js view of the inner Solar System with 2,548 potentially hazardous asteroids at today's positions, upcoming close approaches with their orbits, and MOID computed here (median difference from JPL: 1.2e-4 au). |
-| <img src="assets/live_sky_tonight.png" alt="Sky tonight"> | **Sky tonight.** Planets, bright stars and ISS passes for your location. |
 
-- **Live Sky** web app (three.js): live SGP4 positions for the whole catalog on a day/night Earth, conjunction alerts for protected assets, orbit tracks, a near-Earth asteroid view and a sky chart.
+- **Live Sky** web app (three.js): the features above, plus conjunction alerts for protected assets and orbit and ground tracks.
 - **Catalog**: the full public catalog (~33k objects, ~12k debris and rocket bodies) via COMSPOC Spacebook, with CelesTrak as the fallback.
 - **Conjunctions**: batch SGP4 over the public catalog → time of closest approach (TCA), miss distance, collision probability (2-D Foster Pc), with realistic Spacebook covariances.
 - **Risk**: an orbital-shell graph, an SGP4 physics baseline, a spatio-temporal GNN forecaster, and a per-asset penetration-risk index.

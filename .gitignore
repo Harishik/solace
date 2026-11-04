@@ -5,7 +5,7 @@ __pycache__/
 .ruff_cache/
 .ipynb_checkpoints/
 # Downloaded caches (TLEs, ephemerides, Space-Track history) — re-fetched on demand
-data/
+/data/
 # Large generated outputs
 reports/*.html
 reports/*.npz

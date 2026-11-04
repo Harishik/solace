@@ -30,6 +30,8 @@ from pathlib import Path
 
 import numpy as np
 
+from solace.risk.conformal import online_windows
+
 ROWS = Path("reports/phase3c_rows.npz")
 OUT = Path("reports/phase3c_results.json")
 HORIZONS = (30, 90, 180, 365)
@@ -113,42 +115,10 @@ def learned(r):
     return out
 
 
-LEAD_EDGES = np.array([0, 30, 90, 180, 365, np.inf])
-
-
 def conformal_windows(r, pred, target=0.8, gamma=0.05, min_cal=100):
-    """Online 80 % windows around `pred`. At each issue date only forecasts whose re-entry had
-    already happened are used for calibration (no look-ahead). Groups: predicted lead time x
-    perigee band. The miscoverage level alpha moves by gamma x (target miss - observed miss) as
-    outcomes arrive, which widens the windows after a run of misses."""
-    act = r["actual"]
+    """Online 80 % windows around `pred` (solace.risk.conformal; no look-ahead)."""
     day = np.array([date.fromisoformat(s).toordinal() for s in r["issue"]])
-    res = np.log(act / np.maximum(pred, 0.5))
-    ok = np.isfinite(res) & (act > 0) & (act <= 730)
-    lead = np.clip(np.searchsorted(LEAD_EDGES, np.minimum(pred, 1e6), side="right") - 1, 0, len(LEAD_EDGES) - 2)
-    grp = lead * 3 + (r["hp"] >= 300) + (r["hp"] >= 450)
-    lo = np.full(len(act), np.nan)
-    hi = lo.copy()
-    alpha = 1 - target
-    seen = np.zeros(len(act), bool)
-    for d in np.unique(day):
-        new = ok & ~seen & (day + act <= d) & np.isfinite(lo)
-        if new.any():
-            miss = 1 - np.mean((act[new] >= lo[new]) & (act[new] <= hi[new]))
-            alpha = float(np.clip(alpha + gamma * ((1 - target) - miss), 0.01, 0.5))
-        seen |= new
-        cal = ok & (day + act <= d)
-        m = day == d
-        for g in np.unique(grp[m]):
-            c = cal & (grp == g)
-            if c.sum() < min_cal:
-                c = cal & (lead == g // 3)
-            if c.sum() < min_cal:
-                continue
-            ql, qh = np.quantile(res[c], (alpha / 2, 1 - alpha / 2))
-            k = m & (grp == g) & np.isfinite(pred)
-            lo[k] = pred[k] * np.exp(ql)
-            hi[k] = pred[k] * np.exp(qh)
+    lo, hi, _ = online_windows(day, r["actual"], pred, r["hp"], target, gamma, min_cal)
     return lo, hi
 
 

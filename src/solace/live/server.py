@@ -147,6 +147,16 @@ class State:
         r, _, _ = self.prop.states(jd, fr)
         return teme_to_ecef_m(r[:, 0, :], float(jd[0]), float(fr[0])).astype(np.float32)
 
+    def frame(self, when: datetime) -> bytes:
+        """One WebSocket frame: float64 sim time (unix s) and GMST (rad), then float32 inertial (TEME)
+        positions (m) and velocities (m/s) for every object, NaN-free (0 = not propagated)."""
+        jd, fr = jday_array(when, np.array([0.0]))
+        r, v, _ = self.prop.states(jd, fr)
+        th = float(gmst(jd, fr)[0])
+        pos = np.nan_to_num(r[:, 0, :] * 1000.0).astype(np.float32)
+        vel = np.nan_to_num(v[:, 0, :] * 1000.0).astype(np.float32)
+        return np.array([when.timestamp(), th]).tobytes() + pos.tobytes() + vel.tobytes()
+
 
 def _sbdb_orbit(des: str) -> neo.Orbit:
     from urllib.parse import quote
@@ -229,14 +239,39 @@ def object_info(norad_id: int, t: float | None = None):
     jd, fr = jday_array(start, secs)
     r, _, _ = Propagator([tle]).states(jd, fr)
     track = np.stack([teme_to_ecef_m(r[0, k], float(jd[k]), float(fr[k])) for k in range(len(secs))])
+    # Ground track: three orbits, Earth-fixed, so the client can draw it on the rotating globe.
+    gsecs = np.linspace(0, 3 * period_s, 361)
+    gjd, gfr = jday_array(start, gsecs)
+    gr, _, _ = Propagator([tle]).states(gjd, gfr)
+    ground = np.stack([teme_to_ecef_m(gr[0, k], float(gjd[k]), float(gfr[k])) for k in range(len(gsecs))])
     perigee, apogee = orbit_shell(tle)
     return _clean({
         "id": norad_id, "name": tle.name, "kind": ["payload", "rocket body", "debris"][STATE.kinds[i]],
         "inclination_deg": float(np.rad2deg(sat.inclo)), "period_min": period_s / 60,
         "perigee_km": perigee, "apogee_km": apogee, "tle": [tle.line1, tle.line2],
         "track_ecef_m": np.nan_to_num(track).tolist(),
+        "track_teme_m": np.nan_to_num(r[0] * 1000.0).tolist(),
+        "ground_ecef_m": np.nan_to_num(ground).tolist(),
         "asset": STATE.assets.get(norad_id),
+        "reentry": getattr(_reentry_watch, "by_id", {}).get(norad_id) if _reentry_watch() else None,
     })
+
+
+def _reentry_watch() -> dict:
+    """Today's re-entry forecasts (scripts/reentry_watch.py writes web/data/reentry_watch.json)."""
+    path = WEB_DIR / "data" / "reentry_watch.json"
+    if not path.exists():
+        return {"status": "No forecast yet: run scripts/reentry_watch.py"}
+    if getattr(_reentry_watch, "mtime", None) != path.stat().st_mtime:
+        _reentry_watch.data = json.loads(path.read_text())
+        _reentry_watch.by_id = {r["id"]: r for r in _reentry_watch.data.get("objects", [])}
+        _reentry_watch.mtime = path.stat().st_mtime
+    return _reentry_watch.data
+
+
+@app.get("/api/reentry")
+def reentry():
+    return _reentry_watch()
 
 
 @app.get("/api/assets")
@@ -328,7 +363,7 @@ def sky_view(lat: float, lon: float, mag: float = 4.5):
 
 @app.websocket("/ws/positions")
 async def ws_positions(ws: WebSocket):
-    """Binary frames: float64 sim-time (unix s), then float32 ECEF xyz (m) per catalog object.
+    """Binary frames once a second (see State.frame): sim time, GMST, inertial positions and velocities.
 
     The client may send {"rate": 60} to speed up the simulation clock or {"reset": true}.
     """
@@ -352,9 +387,9 @@ async def ws_positions(ws: WebSocket):
         while True:
             now = time.time()
             t = sim_t + (now - wall_t) * rate
-            pos = await asyncio.get_event_loop().run_in_executor(
-                None, STATE.positions, datetime.fromtimestamp(t, timezone.utc))
-            await ws.send_bytes(np.float64(t).tobytes() + np.nan_to_num(pos, nan=0.0).tobytes())
+            frame = await asyncio.get_event_loop().run_in_executor(
+                None, STATE.frame, datetime.fromtimestamp(t, timezone.utc))
+            await ws.send_bytes(frame)
             await asyncio.sleep(1.0)
     except (WebSocketDisconnect, RuntimeError):
         pass

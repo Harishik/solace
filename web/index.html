@@ -65,6 +65,10 @@
       <div id="sw" class="muted">…</div>
     </div>
     <div class="card glass">
+      <div class="eyebrow">Re-entry watch <span class="muted">· SOLACE forecast, calibrated 80 % windows</span></div>
+      <div id="reentry" class="muted">Loading…</div>
+    </div>
+    <div class="card glass">
       <div class="eyebrow">Protected assets <span class="muted">· conjunctions, next 3 days</span></div>
       <div id="assets" class="muted">Screening…</div>
     </div>
@@ -78,9 +82,11 @@
       <button class="rate" data-rate="60">60×</button>
       <button class="rate" data-rate="600">600×</button>
     </div>
-    <button id="reset" class="ghost">Now</button>
+    <button class="ghost reset">Now</button>
+    <span class="sep"></span>
+    <button id="view-reset" class="ghost">Reset view</button>
   </div>
-  <div class="hint muted small">Drag to rotate · scroll to zoom · click an object</div>
+  <div class="hint muted small">Drag to rotate · scroll to zoom · click an object · double-click to ride along</div>
 </section>
 
 <!-- B. Asteroids -->
@@ -104,12 +110,16 @@
 
 <!-- C. Sky -->
 <section id="view-sky" class="view">
-  <div class="sky-wrap"><canvas id="sky"></canvas></div>
   <aside class="panel">
     <div class="card glass">
-      <div class="eyebrow">Location</div>
+      <div class="eyebrow">Your sky</div>
       <div id="loc" class="muted">Cape Canaveral (default)</div>
       <button id="geo" class="ghost" style="margin-top:10px">Use my location</button>
+      <p class="note">The sky as you would see it standing here: drag to look around, scroll to zoom. Stars, planets and every tracked satellite above your horizon move with the clock below.</p>
+    </div>
+    <div class="card glass">
+      <div class="eyebrow">Above you now</div>
+      <div id="sky-now" class="muted">Waiting for the live catalogue…</div>
     </div>
     <div class="card glass">
       <div class="eyebrow">Planets &amp; Moon</div>
@@ -120,6 +130,17 @@
       <div id="sky-passes"></div>
     </div>
   </aside>
+  <div class="dock glass">
+    <span class="muted small">Time</span>
+    <div class="seg small">
+      <button class="rate active" data-rate="1">1×</button>
+      <button class="rate" data-rate="10">10×</button>
+      <button class="rate" data-rate="60">60×</button>
+      <button class="rate" data-rate="600">600×</button>
+    </div>
+    <button class="ghost reset">Now</button>
+  </div>
+  <div class="hint muted small">Teal dots: sunlit satellites (bigger = closer) · grey: in Earth's shadow · dashed: next ISS passes · click a satellite to open it on the globe</div>
 </section>
 
 <script type="module" src="/static/app.js"></script>
