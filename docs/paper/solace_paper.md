@@ -88,7 +88,8 @@ thermospheric densities (Siemes et al., 2023; van den IJssel et al., 2020). Our 
 **Catalogue history.** 565 weekly snapshots of the public two-line-element (TLE) catalogue from COMSPOC
 Spacebook (January 2016 to October 2026; no account required). From these we keep debris and rocket
 bodies (object types from the Spacebook satellite catalogue) and every distinct TLE with perigee below
-800 km. Payloads are excluded because many manoeuvre.
+800 km. Payloads are excluded from the main cohort because many manoeuvre; Section 4.7 tests them
+separately.
 
 **Truth.** Decay dates from the Spacebook satellite catalogue. An object counts as re-entered within
 horizon *H* of an issue date only if the decay date is known and the catalogue extends at least *H*
@@ -320,13 +321,50 @@ length matters by less than a point either way, and our default is not the best 
 6-month fade is slightly better. We keep the 1-year default rather than re-tune it on the same data. None
 of the conclusions depends on this choice.
 
-### 4.7 What did not work
+### 4.7 Payloads
+
+To test whether the method carries over to satellites, we built the same table for 19,406 payloads
+(2.87 million TLEs) and ran the hindcast on the same 135 issue dates with one addition (`scripts/run_payloads.py`).
+A payload is screened out at an issue date if its mean semi-major axis rose by more than 0.1 km between
+consecutive TLEs (at most 10 days apart) in the preceding 120 days, which only thrust can do: for
+debris, the 99.99th percentile of such rises is 0.058 km. This removes 1,963 payloads per date on average
+(more than 5,000 per date by 2026, mostly Starlink), leaving 314,629 forecasts of 13,807 payloads. Whether
+a payload manoeuvres *after* the issue date is not knowable in advance; we use it only to split the results.
+
+**Table 6.** Payloads, 1-year horizon: median relative timing error with 95 % block-bootstrap intervals
+(`scripts/analyze_payloads.py`).
+
+| Method | All re-entries, 2016–26 | No later manoeuvre, 2016–26 | No later manoeuvre, 2023+ |
+|---|---|---|---|
+| Physics, persistence | 24.1 % [17.8, 31.9] | 21.9 % [16.2, 28.6] | 20.2 % [13.9, 27.9] |
+| Physics, solar-cycle analog | 18.4 % [14.1, 27.4] | 17.0 % [13.3, 24.6] | 19.6 % [14.1, 30.3] |
+| Physics, MSFC as issued | 19.6 % [15.0, 24.8] | 17.9 % [13.9, 22.6] | 19.4 % [13.9, 25.6] |
+| Physics, MSFC + corrected density | 19.8 % [15.0, 25.8] | 18.1 % [13.8, 23.0] | 20.7 % [14.6, 27.1] |
+| Physics, true weather (bound) | 13.5 % [9.8, 19.0] | 12.2 % [9.0, 16.7] | 14.6 % [10.9, 20.6] |
+
+Payloads that coast after the issue date behave like debris: every method is within a point of Table 1,
+with wider intervals because payload re-entries are fewer and more clustered in time. The other 2,105
+re-entries within a year (6.6 %) were of payloads that manoeuvred after the issue date, and for 79 % of
+them every method forecast no re-entry within the year: these are deliberate de-orbits, which no drag
+forecast can anticipate. The 80 % windows, calibrated online on payloads alone, cover only 0.70 (0.71
+without later manoeuvres; 0.61 in 2024), so the windows of Section 4.4 are not calibrated for payloads
+and should not be used for them without a longer payload calibration record.
+
+### 4.8 What did not work
 
 * **Learned residuals.** A gradient-boosted correction of the analog forecast trained on object features
   raised the test error from 20 % to 26 %; the true-weather error is already nearly unbiased each year,
   and a training set dominated by 2022 does not transfer across the cycle.
 * **Quantile regression windows** covered only 40 % on the test years.
 * **Splitting windows** into object and solar parts did no better than the joint conformal windows.
+* **A spatio-temporal graph network over orbital shells** (graph convolution + GRU on weekly shell
+  counts, 2016–2026, test = last 20 %) did not justify itself. For total shell populations over 4 weeks
+  it tied a simple hybrid physics baseline (RMSE of log1p counts 0.203 for both; persistence 0.213),
+  because launches dominate. For the decay of the debris cohort it cut the physics error by 11–14 % at
+  3–6 months, but its re-entry counts were 3–5 times worse than physics (summing per-shell log
+  predictions turns a 1 % bias over 12,000 objects into hundreds of false re-entries), and space-weather
+  inputs never helped at any target or horizon. Re-entry is a per-object problem, which is why this paper
+  forecasts objects, not shells.
 
 ## 5. Discussion
 
@@ -348,7 +386,8 @@ averaged over latitude and local time; this is appropriate for lifetime but not 
 (iii) The analysis covers the declining phase of Cycle 24 and Cycle 25 only. (iv) Several method choices
 (MSFC anchoring, the density correction) were made after seeing the 2024–25 results; we therefore report
 all variants and their uncertainty, test the sensitivity to the anchoring (Section 4.6), and emphasise
-the full-decade numbers. (v) Payloads are excluded.
+the full-decade numbers. (v) Payloads that coast are forecast as well as debris (Section 4.7), but deliberate de-orbits are not
+predictable from drag and payload windows under-cover.
 
 ## 6. Conclusions
 

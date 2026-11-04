@@ -28,6 +28,83 @@ _LONS = np.array([0.0, 60.0, 120.0, 180.0, 240.0, 300.0])  # at 12 UT, longitude
 
 
 MSIS_VERSION = 2.1  # pymsis model: 2.1 (default), 2.0, or 0 for NRLMSISE-00 (ablation)
+# Along-orbit density (ablation): scale the latitude/local-time mean density at each orbit node by
+# MSIS's ratio between the node's own latitude and local solar time and that mean (see geometry_factor).
+GEOMETRY = False
+
+_G_F = np.array([70.0, 100.0, 150.0, 200.0, 250.0])
+_G_LATS = np.array([-90.0, -70.0, -45.0, -20.0, 0.0, 20.0, 45.0, 70.0, 90.0])
+_G_LONS = np.arange(0.0, 360.0, 30.0)  # at 12 UT, local solar time = 12 h + lon / 15
+_G_TABLE = None
+
+
+def geometry_table() -> np.ndarray:
+    """log(rho(lat, local time) / mean) on (F10.7 level, month, altitude, latitude, lon+wrap),
+    with the mean taken exactly as in msis_log_density. Cached in data/msis_geometry_v<version>.npz."""
+    global _G_TABLE
+    if _G_TABLE is not None:
+        return _G_TABLE
+    from ..ingest.cache import DATA_DIR
+
+    path = Path(DATA_DIR) / f"msis_geometry_v{MSIS_VERSION}.npz"
+    if path.exists():
+        _G_TABLE = np.load(path)["logg"]
+        return _G_TABLE
+    import pymsis
+
+    out = np.zeros((len(_G_F), 12, len(ALTS), len(_G_LATS), len(_G_LONS) + 1))
+    for fi, f in enumerate(_G_F):
+        times = np.array([np.datetime64(f"2015-{m:02d}-15T12:00") for m in range(1, 13)])
+        aps = np.full((12, 7), 10.0)
+        r = pymsis.calculate(times, _G_LONS, _G_LATS, ALTS, f107s=np.full(12, f), f107as=np.full(12, f),
+                             aps=aps, version=MSIS_VERSION)[..., pymsis.Variable.MASS_DENSITY]
+        r = r.reshape(12, len(_G_LONS), len(_G_LATS), len(ALTS))
+        li = [list(_G_LATS).index(x) for x in _LATS]
+        oi = [list(_G_LONS).index(x) for x in _LONS]
+        w = np.cos(np.radians(_LATS))
+        mean = np.einsum("tolA,l->tA", r[:, oi][:, :, li], w) / (w.sum() * len(oi))
+        lg = np.log(r / mean[:, None, None, :])  # (month, lon, lat, alt)
+        lg = np.transpose(lg, (0, 3, 2, 1))  # (month, alt, lat, lon)
+        out[fi, :, :, :, :-1] = lg
+        out[fi, :, :, :, -1] = lg[..., 0]
+    np.savez_compressed(path, logg=out)
+    _G_TABLE = out
+    return out
+
+
+def _sun_ra_dec(days_since_j2000: np.ndarray):
+    """Low-precision solar right ascension and declination (rad), ~0.01 deg (Astronomical Almanac)."""
+    n = days_since_j2000
+    L = np.radians((280.460 + 0.9856474 * n) % 360)
+    g = np.radians((357.528 + 0.9856003 * n) % 360)
+    lam = L + np.radians(1.915) * np.sin(g) + np.radians(0.020) * np.sin(2 * g)
+    eps = np.radians(23.439 - 4e-7 * n)
+    return np.arctan2(np.cos(eps) * np.sin(lam), np.cos(lam)), np.arcsin(np.sin(eps) * np.sin(lam))
+
+
+def geometry_factor(table: "DensityTable", t, alt_km, rhat):
+    """exp(log G) at each node: rhat (n, nodes, 3) unit position vectors (TEME ~ equatorial)."""
+    from scipy.ndimage import map_coordinates
+
+    g = geometry_table()
+    j2000 = (table.start - date(2000, 1, 1)).days - 0.5 + t  # table rows are at 12 UT
+    ra_sun, _ = _sun_ra_dec(j2000)
+    lat = np.degrees(np.arcsin(np.clip(rhat[..., 2], -1, 1)))
+    ra = np.arctan2(rhat[..., 1], rhat[..., 0])
+    lon = np.degrees(ra - ra_sun[:, None]) % 360.0
+    if table.f107a is not None:
+        x = np.clip(t / table.step, 0, len(table.f107a) - 1)
+        fa = np.interp(x, np.arange(len(table.f107a)), table.f107a)
+    else:
+        fa = np.full(len(t), 150.0)
+    month = ((table.start.month - 1) + t / 30.44) % 12  # 0 = mid-January
+    fi = np.interp(fa, _G_F, np.arange(len(_G_F)))
+    ai = np.clip((alt_km - ALTS[0]) / (ALTS[1] - ALTS[0]), 0, len(ALTS) - 1)
+    la = np.interp(lat, _G_LATS, np.arange(len(_G_LATS)))
+    lo = lon / 30.0
+    shape = alt_km.shape
+    coords = np.stack([np.broadcast_to(fi[:, None], shape), np.broadcast_to(month[:, None], shape), ai, la, lo])
+    return np.exp(map_coordinates(g, coords.reshape(5, -1), order=1, mode="nearest").reshape(shape))
 
 
 def msis_log_density(times: np.ndarray, f107: np.ndarray, f107a: np.ndarray, ap: np.ndarray) -> np.ndarray:
@@ -153,8 +230,10 @@ _COSE = np.cos(_E)
 
 
 def rates(a_km: np.ndarray, e: np.ndarray, inc: np.ndarray, bc: np.ndarray, t: np.ndarray,
-          table: DensityTable) -> tuple[np.ndarray, np.ndarray]:
-    """Orbit-averaged da/dt (km/day) and de/dt (1/day) from drag. `inc` in radians."""
+          table: DensityTable, frame=None) -> tuple[np.ndarray, np.ndarray]:
+    """Orbit-averaged da/dt (km/day) and de/dt (1/day) from drag. `inc` in radians. With GEOMETRY,
+    `frame` = (P, Q) unit vectors to perigee and 90 deg ahead locate each node in latitude and
+    local time."""
     a = a_km[:, None] * 1e3
     ee = e[:, None]
     r = a * (1 - ee * _COSE)
@@ -164,6 +243,11 @@ def rates(a_km: np.ndarray, e: np.ndarray, inc: np.ndarray, bc: np.ndarray, t: n
     # Co-rotation: relative speed reduced by the atmosphere's along-track motion.
     vrel = v * (1 - (r * OMEGA_E * np.cos(inc)[:, None]) / v)
     rho = table(t, r / 1e3 - RE)
+    if GEOMETRY and frame is not None:
+        P, Q = frame
+        sinnu = np.sqrt(1 - ee**2) * np.sin(_E) / (1 - ee * _COSE)
+        rhat = cosnu[..., None] * P[:, None, :] + sinnu[..., None] * Q[:, None, :]
+        rho = rho * geometry_factor(table, t, r / 1e3 - RE, rhat)
     k = rho * bc[:, None] * vrel**2 / v2  # rho B (v_rel/v)^2
     w = (1 - ee * _COSE) / _NODES  # dM/dE weight -> time average
     dadt = -np.sum(k * a**2 * v**3 / MU * w, axis=1)
@@ -278,9 +362,15 @@ def propagate(a_km, e, inc, bc, t0, t_end, table: DensityTable, max_step: float 
     def deriv(ai, evi, jvi, bi, ti):
         ei = np.linalg.norm(evi, axis=1)
         inc_i = np.arccos(np.clip(jvi[:, 2] / np.linalg.norm(jvi, axis=1), -1, 1))
-        da, de_drag = rates(ai, ei, inc_i, bi, ti, table)
         ehat = evi / np.maximum(ei, 1e-12)[:, None]
         hhat = jvi / np.linalg.norm(jvi, axis=1)[:, None]
+        frame = None
+        if GEOMETRY:
+            node = np.cross(np.array([0.0, 0.0, 1.0]), hhat)
+            node /= np.maximum(np.linalg.norm(node, axis=1), 1e-12)[:, None]
+            P = np.where((ei > 1e-9)[:, None], ehat, node)
+            frame = (P, np.cross(hhat, P))
+        da, de_drag = rates(ai, ei, inc_i, bi, ti, table, frame)
         pos = ()
         if bodies is not None:
             sun, moon = bodies(ti + off)

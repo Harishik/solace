@@ -8,6 +8,8 @@ columns of reports/phase3c_rows.npz and phase3e_rows_*.npz.
 Variants:
   --msis 0          NRLMSISE-00 instead of NRLMSIS 2.1           -> columns oracle_msis00, msfc_msis00
   --baseline 14 40  drag-fit baseline of 14-40 days (default 21-70) -> columns oracle_b14_40, msfc_b14_40
+  --geometry        density at each orbit node's own latitude and local time (decay.GEOMETRY)
+                    instead of the latitude/local-time mean -> columns oracle_geom, msfc_geom
 
 Run from the repo root:  .venv/bin/python scripts/run_ablation.py --msis 0 --shard 0 --of 4
 Writes reports/ablation_<tag>_rows_<shard>.npz and resumes if interrupted.
@@ -36,11 +38,13 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--msis", type=float, default=2.1)
     ap.add_argument("--baseline", type=int, nargs=2, default=(21, 70))
+    ap.add_argument("--geometry", action="store_true")
     ap.add_argument("--shard", type=int, default=0)
     ap.add_argument("--of", type=int, default=1)
     a = ap.parse_args()
     D.MSIS_VERSION = 0 if a.msis == 0 else a.msis  # pymsis wants the integer 0 for NRLMSISE-00
-    tag = "msis00" if a.msis == 0 else f"b{a.baseline[0]}_{a.baseline[1]}"
+    D.GEOMETRY = a.geometry
+    tag = "geom" if a.geometry else "msis00" if a.msis == 0 else f"b{a.baseline[0]}_{a.baseline[1]}"
     out = Path(f"reports/ablation_{tag}_rows_{a.shard}.npz")
     tt = R.TLETable.load(Path(DATA_DIR) / "reentry_tles.npz")
     sw = load_space_weather()

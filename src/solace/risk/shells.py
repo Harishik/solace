@@ -22,10 +22,12 @@ KINDS = ("payload", "rocket_body", "debris")
 # Station-kept constellations: members are phased within their own shells, so at collision-relevant
 # distances they meet each other far less often than random motion predicts.
 CONSTELLATIONS = ("STARLINK", "ONEWEB", "KUIPER", "QIANFAN", "GUOWANG", "IRIDIUM", "ORBCOMM", "GLOBALSTAR")
-# Measured weight of same-constellation pairs in the kinetic-gas rate (scripts/validate_kinetic.py:
-# 40 Starlink satellites screened for one day, approaches < 1-2 km): 0.05-0.12 of the random rate.
-# Pairs with every other object follow kinetic gas theory to within 0.7-1.4x at 1-10 km.
-INTRA_WEIGHT = 0.08
+# Measured weight of same-constellation pairs in the kinetic-gas rate (scripts/validate_kinetic.py
+# --weeks 7: 40 Starlink satellites screened for one day from each of 7 weekly snapshots, approaches
+# < 1-2 km): 0.12 [0.10, 0.15] of the random rate. It rises to 0.4-0.5 at 5-10 km, where neighbouring
+# slots in the same shell pass each other. Pairs with every other object follow kinetic gas theory to
+# within 0.85-1.01x at 1-10 km.
+INTRA_WEIGHT = 0.12
 
 
 def constellation_index(name: str) -> int:

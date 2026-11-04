@@ -1,0 +1,362 @@
+{
+ "n_rows": 314629,
+ "n_issues": 135,
+ "n_objects": 13807,
+ "screened_out_per_issue_mean": 1962.7481481481482,
+ "all_years": {
+  "all": {
+   "persist": {
+    "median_rel_err": 0.24095809884328073,
+    "share_forecast_no_reentry": 0.11101037889208454,
+    "ci95": [
+     0.17811623002722593,
+     0.3190483921933412
+    ],
+    "n_reentries": 31988
+   },
+   "analog": {
+    "median_rel_err": 0.18428028442642774,
+    "share_forecast_no_reentry": 0.10163186194823058,
+    "ci95": [
+     0.14086156819728923,
+     0.2741735313782144
+    ],
+    "n_reentries": 31988
+   },
+   "msfc": {
+    "median_rel_err": 0.1959727144275882,
+    "share_forecast_no_reentry": 0.10519569838689509,
+    "ci95": [
+     0.14955946819433116,
+     0.24835061461020225
+    ],
+    "n_reentries": 31988
+   },
+   "msfc_hold": {
+    "median_rel_err": 0.19844839959145125,
+    "share_forecast_no_reentry": 0.10638364386644993,
+    "ci95": [
+     0.14962982701411018,
+     0.2581663019006959
+    ],
+    "n_reentries": 31988
+   },
+   "oracle": {
+    "median_rel_err": 0.13520501373560062,
+    "share_forecast_no_reentry": 0.10669626109791172,
+    "ci95": [
+     0.09760819817392513,
+     0.1904901713774943
+    ],
+    "n_reentries": 31988
+   },
+   "oracle_hold": {
+    "median_rel_err": 0.13816425555712553,
+    "share_forecast_no_reentry": 0.10850944104039015,
+    "ci95": [
+     0.09814838859704562,
+     0.20070778133106867
+    ],
+    "n_reentries": 31988
+   }
+  },
+  "no_later_manoeuvre": {
+   "persist": {
+    "median_rel_err": 0.21892024794291146,
+    "share_forecast_no_reentry": 0.06287855971622662,
+    "ci95": [
+     0.1615262693805961,
+     0.28551235235400546
+    ],
+    "n_reentries": 29883
+   },
+   "analog": {
+    "median_rel_err": 0.170294017353149,
+    "share_forecast_no_reentry": 0.05374293076331024,
+    "ci95": [
+     0.13295296535971027,
+     0.24595156196577583
+    ],
+    "n_reentries": 29883
+   },
+   "msfc": {
+    "median_rel_err": 0.17882811556332448,
+    "share_forecast_no_reentry": 0.057390489576013115,
+    "ci95": [
+     0.13904022071658034,
+     0.2261375639597149
+    ],
+    "n_reentries": 29883
+   },
+   "msfc_hold": {
+    "median_rel_err": 0.1811220640745066,
+    "share_forecast_no_reentry": 0.058427868687882745,
+    "ci95": [
+     0.1382846840348239,
+     0.2298247561337906
+    ],
+    "n_reentries": 29883
+   },
+   "oracle": {
+    "median_rel_err": 0.12218573909529742,
+    "share_forecast_no_reentry": 0.058662115584111364,
+    "ci95": [
+     0.08964779039850156,
+     0.16732960226623844
+    ],
+    "n_reentries": 29883
+   },
+   "oracle_hold": {
+    "median_rel_err": 0.12495221944063452,
+    "share_forecast_no_reentry": 0.06046916306930362,
+    "ci95": [
+     0.08847813471594594,
+     0.17441252030927348
+    ],
+    "n_reentries": 29883
+   }
+  },
+  "later_manoeuvre": {
+   "persist": {
+    "median_rel_err": Infinity,
+    "share_forecast_no_reentry": 0.7942992874109264,
+    "ci95": [
+     NaN,
+     NaN
+    ],
+    "n_reentries": 2105
+   },
+   "analog": {
+    "median_rel_err": Infinity,
+    "share_forecast_no_reentry": 0.7814726840855107,
+    "ci95": [
+     NaN,
+     NaN
+    ],
+    "n_reentries": 2105
+   },
+   "msfc": {
+    "median_rel_err": Infinity,
+    "share_forecast_no_reentry": 0.7838479809976246,
+    "ci95": [
+     NaN,
+     NaN
+    ],
+    "n_reentries": 2105
+   },
+   "msfc_hold": {
+    "median_rel_err": Infinity,
+    "share_forecast_no_reentry": 0.7871733966745843,
+    "ci95": [
+     NaN,
+     NaN
+    ],
+    "n_reentries": 2105
+   },
+   "oracle": {
+    "median_rel_err": Infinity,
+    "share_forecast_no_reentry": 0.7885985748218527,
+    "ci95": [
+     NaN,
+     NaN
+    ],
+    "n_reentries": 2105
+   },
+   "oracle_hold": {
+    "median_rel_err": Infinity,
+    "share_forecast_no_reentry": 0.790498812351544,
+    "ci95": [
+     NaN,
+     NaN
+    ],
+    "n_reentries": 2105
+   }
+  }
+ },
+ "test_2023plus": {
+  "all": {
+   "persist": {
+    "median_rel_err": 0.2264599147085344,
+    "share_forecast_no_reentry": 0.1283667086775895,
+    "ci95": [
+     0.15012383925362516,
+     0.3146762417741233
+    ],
+    "n_reentries": 21423
+   },
+   "analog": {
+    "median_rel_err": 0.2193455126881704,
+    "share_forecast_no_reentry": 0.12962703636278766,
+    "ci95": [
+     0.15064483420543626,
+     0.3463243126767305
+    ],
+    "n_reentries": 21423
+   },
+   "msfc": {
+    "median_rel_err": 0.2160663269731833,
+    "share_forecast_no_reentry": 0.13261447976473884,
+    "ci95": [
+     0.14803310989535548,
+     0.2909864118692427
+    ],
+    "n_reentries": 21423
+   },
+   "msfc_hold": {
+    "median_rel_err": 0.23114616627947762,
+    "share_forecast_no_reentry": 0.13438827428464734,
+    "ci95": [
+     0.1581252660374749,
+     0.3090687728090562
+    ],
+    "n_reentries": 21423
+   },
+   "oracle": {
+    "median_rel_err": 0.1611409082472069,
+    "share_forecast_no_reentry": 0.13653549922979974,
+    "ci95": [
+     0.11554317226039763,
+     0.24162065960622853
+    ],
+    "n_reentries": 21423
+   },
+   "oracle_hold": {
+    "median_rel_err": 0.1702673339766327,
+    "share_forecast_no_reentry": 0.13877608178126313,
+    "ci95": [
+     0.1270312882252865,
+     0.2558945590184219
+    ],
+    "n_reentries": 21423
+   }
+  },
+  "no_later_manoeuvre": {
+   "persist": {
+    "median_rel_err": 0.2024245912519308,
+    "share_forecast_no_reentry": 0.06762699014404852,
+    "ci95": [
+     0.13889270080529523,
+     0.2787642309791331
+    ],
+    "n_reentries": 19785
+   },
+   "analog": {
+    "median_rel_err": 0.19587690054873777,
+    "share_forecast_no_reentry": 0.06889057366691938,
+    "ci95": [
+     0.14073145864069922,
+     0.30309899709960464
+    ],
+    "n_reentries": 19785
+   },
+   "msfc": {
+    "median_rel_err": 0.19387809387080937,
+    "share_forecast_no_reentry": 0.07202426080363912,
+    "ci95": [
+     0.13859227568723012,
+     0.2559536776209342
+    ],
+    "n_reentries": 19785
+   },
+   "msfc_hold": {
+    "median_rel_err": 0.20650307941404206,
+    "share_forecast_no_reentry": 0.07369219105382865,
+    "ci95": [
+     0.14614229606926057,
+     0.27103904760633124
+    ],
+    "n_reentries": 19785
+   },
+   "oracle": {
+    "median_rel_err": 0.14567156833241726,
+    "share_forecast_no_reentry": 0.07591609805408138,
+    "ci95": [
+     0.10891485607146015,
+     0.20606074294567228
+    ],
+    "n_reentries": 19785
+   },
+   "oracle_hold": {
+    "median_rel_err": 0.15423397660208202,
+    "share_forecast_no_reentry": 0.07803891837250443,
+    "ci95": [
+     0.11945578199500682,
+     0.22216140984826438
+    ],
+    "n_reentries": 19785
+   }
+  },
+  "later_manoeuvre": {
+   "persist": {
+    "median_rel_err": Infinity,
+    "share_forecast_no_reentry": 0.8620268620268621,
+    "ci95": [
+     NaN,
+     NaN
+    ],
+    "n_reentries": 1638
+   },
+   "analog": {
+    "median_rel_err": Infinity,
+    "share_forecast_no_reentry": 0.8632478632478633,
+    "ci95": [
+     NaN,
+     NaN
+    ],
+    "n_reentries": 1638
+   },
+   "msfc": {
+    "median_rel_err": Infinity,
+    "share_forecast_no_reentry": 0.8644688644688645,
+    "ci95": [
+     NaN,
+     NaN
+    ],
+    "n_reentries": 1638
+   },
+   "msfc_hold": {
+    "median_rel_err": Infinity,
+    "share_forecast_no_reentry": 0.8675213675213675,
+    "ci95": [
+     NaN,
+     NaN
+    ],
+    "n_reentries": 1638
+   },
+   "oracle": {
+    "median_rel_err": Infinity,
+    "share_forecast_no_reentry": 0.8687423687423688,
+    "ci95": [
+     NaN,
+     NaN
+    ],
+    "n_reentries": 1638
+   },
+   "oracle_hold": {
+    "median_rel_err": Infinity,
+    "share_forecast_no_reentry": 0.8724053724053724,
+    "ci95": [
+     NaN,
+     NaN
+    ],
+    "n_reentries": 1638
+   }
+  }
+ },
+ "windows_msfc_hold": {
+  "coverage": 0.7026696409296971,
+  "n": 27794,
+  "coverage_no_later_manoeuvre": 0.7068480128697305,
+  "by_year": {
+   "2017": 0.5688622754491018,
+   "2018": 0.8857142857142857,
+   "2019": 0.825065274151436,
+   "2020": 0.7628398791540786,
+   "2021": 0.7349125775521714,
+   "2022": 0.7532794249775382,
+   "2023": 0.6870868223887175,
+   "2024": 0.6073079145002889,
+   "2025": 0.7515063370039476
+  }
+ }
+}

@@ -92,3 +92,43 @@ def test_axisymmetric_plate_impact_matches_hugoniot_on_and_off_axis():
         assert np.median(p[m]) == pytest.approx(expected, rel=0.08)
         assert np.median(s.vel[m, 1]) == pytest.approx(-up, rel=0.05)
     assert (s.pos[:, 0] >= 0).all()
+
+
+def test_tillotson_reference_state_and_compression():
+    from solace.impact.sph import TILLOTSON_AL as T, tillotson
+
+    assert abs(tillotson(np.array([T.rho0]), np.array([0.0]))[0]) < 1e-12
+    p = tillotson(np.array([1.1 * T.rho0]), np.array([0.0]))[0]
+    assert p == pytest.approx(T.A * 0.1 + T.B * 0.01, rel=1e-6)  # cold compressed branch
+    # Hot, expanded material approaches the ideal-gas-like a rho E.
+    rho, e = np.array([0.01 * T.rho0]), np.array([20.0])
+    assert tillotson(rho, e)[0] == pytest.approx(T.a * rho[0] * e[0], rel=0.05)
+
+
+def _axi(**kw):
+    from solace.impact import WhippleImpact
+
+    return WhippleImpact(projectile_diameter=1.0, resolution=0.2, width=6.0, standoff=3.0, axisymmetric=True,
+                         **kw).build()
+
+
+def test_flaws_cover_every_particle_and_grow_damage_only_in_tension():
+    sol = _axi(fracture=True, seed=3)
+    assert sol.n_flaws.min() >= 1
+    assert np.all(np.diff(sol.flaw_eps[sol.flaw_owner == sol.flaw_owner[0]]) >= 0)
+    n = len(sol.damage)
+    sol._eps_local = np.zeros(n)
+    sol._grow_damage(0.1)
+    assert sol.damage.max() == 0.0  # no tension, no damage
+    sol._eps_local = np.full(n, 1.0)  # far beyond every flaw
+    for _ in range(50):
+        sol._grow_damage(0.1)
+    assert sol.damage.min() > 0.99
+
+
+def test_artificial_stress_and_fracture_conserve_axial_momentum():
+    sol = _axi(eos="tillotson", artificial_stress=0.3, fracture=True)
+    p0 = sol.momentum()[1]
+    for _ in range(150):
+        sol.step()
+    assert abs(sol.momentum()[1] - p0) < 1e-6 * abs(p0)
