@@ -2,7 +2,7 @@
 
 Physics and assumptions are written up in docs/PHYSICS.md. In short: drag acts only along track
 with atmospheric co-rotation; the Gauss equations for a and e are averaged over one orbit on
-eccentric-anomaly nodes; density is NRLMSIS 2.0 averaged over latitude and local time and
+eccentric-anomaly nodes; density is NRLMSIS 2.1 averaged over latitude and local time and
 tabulated in log rho against altitude and day. Every object carries its own clock, so one
 vectorised loop handles slow and fast decayers together.
 """
@@ -27,13 +27,16 @@ _LATS = np.array([-70.0, -45.0, -20.0, 0.0, 20.0, 45.0, 70.0])
 _LONS = np.array([0.0, 60.0, 120.0, 180.0, 240.0, 300.0])  # at 12 UT, longitude = local time
 
 
+MSIS_VERSION = 2.1  # pymsis model: 2.1 (default), 2.0, or 0 for NRLMSISE-00 (ablation)
+
+
 def msis_log_density(times: np.ndarray, f107: np.ndarray, f107a: np.ndarray, ap: np.ndarray) -> np.ndarray:
     """(len(times), len(ALTS)) natural log of mass density (kg/m^3), averaged over latitude and
     local time. `f107` should be the previous day's flux, as MSIS expects."""
     import pymsis
 
     aps = np.repeat(np.asarray(ap, float)[:, None], 7, axis=1)
-    out = pymsis.calculate(times, _LONS, _LATS, ALTS, f107s=f107, f107as=f107a, aps=aps)
+    out = pymsis.calculate(times, _LONS, _LATS, ALTS, f107s=f107, f107as=f107a, aps=aps, version=MSIS_VERSION)
     rho = out[..., pymsis.Variable.MASS_DENSITY].reshape(len(times), -1, len(ALTS))
     # Weight latitudes by cos(lat): equal area, which is what an inclined orbit samples on average.
     w = np.tile(np.cos(np.radians(_LATS)), len(_LONS))

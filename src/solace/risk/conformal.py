@@ -64,3 +64,43 @@ def quantile_table(act: np.ndarray, pred: np.ndarray, hp: np.ndarray, alpha: flo
         if c.sum() >= min_cal:
             out[g] = tuple(float(q) for q in np.quantile(res[c], (alpha / 2, 1 - alpha / 2)))
     return out
+
+
+def event_probability(day: np.ndarray, act: np.ndarray, pred: np.ndarray, hp: np.ndarray, horizon: float,
+                      resolve_days: int = 730, min_cal: int = 100) -> np.ndarray:
+    """P(re-entry within `horizon` days) for every forecast, with no look-ahead.
+
+    Calibration uses earlier forecasts that are fully resolved (issued at least `resolve_days`
+    before). A finite forecast gets the empirical distribution of log(actual / forecast) among
+    resolved finite forecasts in its lead x perigee group (objects still up count as +inf). A
+    forecast of "no re-entry within the model horizon" (inf) gets the observed event rate among
+    resolved forecasts of the same kind in its perigee band. NaN while calibration data are short."""
+    fin = np.isfinite(pred)
+    scale = np.where(fin, np.maximum(pred, 0.5), 1.0)
+    res = np.where(np.isfinite(act) & (act > 0), np.log(np.maximum(act, 0.5) / scale), np.inf)
+    grp, lead = groups(np.where(fin, pred, 1e6), hp)
+    band = (hp >= 300).astype(int) + (hp >= 450)
+    out = np.full(len(act), np.nan)
+    thr = np.log(horizon / np.where(fin, np.maximum(pred, 0.5), 1.0))
+    event = act <= horizon
+    for d in np.unique(day):
+        cal = day + resolve_days <= d
+        m = day == d
+        if cal.sum() < min_cal:
+            continue
+        for g in np.unique(grp[m & fin]):
+            c = cal & fin & (grp == g)
+            if c.sum() < min_cal:
+                c = cal & fin & (lead == g // 3)
+            if c.sum() < min_cal:
+                continue
+            r = np.sort(res[c])
+            k = m & fin & (grp == g)
+            out[k] = np.searchsorted(r, thr[k], side="right") / len(r)
+        for bnd in np.unique(band[m & ~fin]):
+            c = cal & ~fin & (band == bnd)
+            if c.sum() < min_cal:
+                c = cal & ~fin
+            if c.sum() >= min_cal:
+                out[m & ~fin & (band == bnd)] = event[c].mean()
+    return out

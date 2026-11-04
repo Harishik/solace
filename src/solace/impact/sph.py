@@ -4,9 +4,12 @@ Physics:
 * Mie-Grueneisen equation of state with a linear Us-up Hugoniot (aluminium defaults).
 * Monaghan artificial viscosity to capture shocks.
 * Cubic-spline kernel, KD-tree neighbour search, symplectic leap-frog time integration.
-* Hydrodynamic only (no deviatoric strength). At 5-15 km/s impact pressures are 50-300 GPa against a
-  yield of ~0.3 GPa, so strength barely affects the bumper hole or the debris cloud; it does matter
-  for rear-wall bending, which this solver doesn't predict. A tensile cut-off stands in for spall.
+* Material strength (Libersky and Petschek 1991): deviatoric stress evolved with the Jaumann rate
+  under plane strain, elastic-perfectly-plastic von Mises yield with radial return, and linear
+  thermal softening to zero at melt. At 5-15 km/s impact pressures (50-300 GPa) dwarf the yield
+  (~0.3 GPa), so strength hardly changes the bumper hole or the debris cloud; it does decide whether
+  the rear wall bends or tears. A tensile cut-off stands in for spall. `strength=False` gives the
+  purely hydrodynamic solver.
 
 Units are mm, microseconds, grams. Velocities in mm/us equal km/s, and pressure comes out in
 g/(mm us^2) = 1 TPa, so 1 GPa = 1e-3.
@@ -30,6 +33,9 @@ class Material:
     s: float = 1.34  # Us = c0 + s up
     gamma0: float = 2.0  # Grueneisen parameter
     p_min: float = -1.0e-3  # tensile cut-off (~ -1 GPa spall strength)
+    shear_modulus: float = 26.0e-3  # 26 GPa (Al 6061-T6)
+    yield_stress: float = 0.29e-3  # 0.29 GPa
+    e_melt: float = 0.97  # specific energy to melt from room temperature, (km/s)^2 = MJ/kg
 
 
 ALUMINIUM = Material()
@@ -91,24 +97,27 @@ class SPHState:
     body: np.ndarray  # integer body id per particle
     pos0: np.ndarray
     h: float
+    sdev: np.ndarray | None = None  # deviatoric stress (n, 4): xx, yy, zz, xy (plane strain)
     t: float = 0.0
     names: list[str] = field(default_factory=list)
 
 
 class SPHSolver:
     def __init__(self, bodies: list[Body], dx: float, material: Material = ALUMINIUM,
-                 h_factor: float = 1.3, alpha: float = 1.0, beta: float = 2.0, cfl: float = 0.3):
+                 h_factor: float = 1.3, alpha: float = 1.0, beta: float = 2.0, cfl: float = 0.3,
+                 strength: bool = True):
         pos = np.vstack([b.pos for b in bodies])
         vel = np.vstack([np.broadcast_to(b.vel, b.pos.shape) for b in bodies]).astype(float)
         body = np.concatenate([np.full(len(b.pos), i) for i, b in enumerate(bodies)])
         n = len(pos)
         self.m = material
         self.alpha, self.beta, self.cfl = alpha, beta, cfl
+        self.strength = strength
         self._cached = None
         self.state = SPHState(
             pos=pos.astype(float), vel=vel, rho=np.full(n, material.rho0), e=np.zeros(n),
             mass=np.full(n, material.rho0 * dx * dx), body=body, pos0=pos.copy(),
-            h=h_factor * dx, names=[b.name for b in bodies],
+            h=h_factor * dx, names=[b.name for b in bodies], sdev=np.zeros((n, 4)),
         )
 
     def _rates(self, s: SPHState):
@@ -140,24 +149,67 @@ class SPHSolver:
         for k in range(2):
             acc[:, k] = -np.bincount(i, mj * f[:, k], n) + np.bincount(j, mi * f[:, k], n)
         de = 0.5 * (np.bincount(i, mj * term * dvgw, n) + np.bincount(j, mi * term * dvgw, n))
+        ds = np.zeros((n, 4))
+        if self.strength:
+            # Deviatoric stress adds (S_i/rho_i^2 + S_j/rho_j^2) . grad W to the acceleration.
+            S, r2 = s.sdev, s.rho**2
+            sx = S[i, 0] / r2[i] + S[j, 0] / r2[j]
+            sy = S[i, 1] / r2[i] + S[j, 1] / r2[j]
+            sxy = S[i, 3] / r2[i] + S[j, 3] / r2[j]
+            fx, fy = sx * gw[:, 0] + sxy * gw[:, 1], sxy * gw[:, 0] + sy * gw[:, 1]
+            acc[:, 0] += np.bincount(i, mj * fx, n) - np.bincount(j, mi * fx, n)
+            acc[:, 1] += np.bincount(i, mj * fy, n) - np.bincount(j, mi * fy, n)
+            # Velocity gradient L_ab = dv_a/dx_b = sum_j (m_j/rho_j)(v_j - v_i)_a (grad_i W)_b.
+            L = np.zeros((n, 2, 2))
+            wi, wj = mj / s.rho[j], mi / s.rho[i]
+            for a in range(2):
+                for b in range(2):
+                    g = dv[:, a] * gw[:, b]
+                    L[:, a, b] = -np.bincount(i, wi * g, n) - np.bincount(j, wj * g, n)
+            exx, eyy, exy = L[:, 0, 0], L[:, 1, 1], 0.5 * (L[:, 0, 1] + L[:, 1, 0])
+            w = 0.5 * (L[:, 0, 1] - L[:, 1, 0])
+            tr3 = (exx + eyy) / 3.0
+            g2 = 2.0 * self.m.shear_modulus * self._soft(s.e)
+            # Jaumann rate: S' = 2G dev(D) + W S - S W (plane strain, so D_zz = 0).
+            ds[:, 0] = g2 * (exx - tr3) + 2.0 * w * S[:, 3]
+            ds[:, 1] = g2 * (eyy - tr3) - 2.0 * w * S[:, 3]
+            ds[:, 2] = g2 * (-tr3)
+            ds[:, 3] = g2 * exy + w * (S[:, 1] - S[:, 0])
+            de += (S[:, 0] * exx + S[:, 1] * eyy + 2.0 * S[:, 3] * exy) / s.rho
         vmax = np.max(c + np.linalg.norm(s.vel, axis=1))
-        return drho, acc, de, vmax, p
+        return drho, acc, de, vmax, p, ds
+
+    def _soft(self, e):
+        """Linear thermal softening: full strength cold, none at melt."""
+        return np.clip(1.0 - e / self.m.e_melt, 0.0, 1.0)
+
+    def _yield(self, s: SPHState):
+        """Radial return onto the von Mises surface."""
+        S = s.sdev
+        vm = np.sqrt(1.5 * (S[:, 0] ** 2 + S[:, 1] ** 2 + S[:, 2] ** 2 + 2.0 * S[:, 3] ** 2))
+        y = self.m.yield_stress * self._soft(s.e)
+        f = np.where(vm > y, y / np.maximum(vm, 1e-30), 1.0)
+        S *= f[:, None]
 
     def step(self) -> float:
         s = self.state
         # Rates at the end of one step are the rates at the start of the next, so reuse them.
-        drho, acc, de, vmax, _ = self._cached if self._cached else self._rates(s)
+        drho, acc, de, vmax, _, ds = self._cached if self._cached else self._rates(s)
         dt = self.cfl * s.h / vmax
         # Kick-drift-kick leap-frog.
         s.vel += 0.5 * dt * acc
         s.rho += 0.5 * dt * drho
         s.e += 0.5 * dt * de
+        s.sdev += 0.5 * dt * ds
         s.pos += dt * s.vel
         self._cached = rates = self._rates(s)
-        drho, acc, de, _, _ = rates
+        drho, acc, de, _, _, ds = rates
         s.vel += 0.5 * dt * acc
         s.rho += 0.5 * dt * drho
         s.e = np.maximum(s.e + 0.5 * dt * de, 0.0)
+        s.sdev += 0.5 * dt * ds
+        if self.strength:
+            self._yield(s)
         s.rho = np.maximum(s.rho, 0.05 * self.m.rho0)
         s.t += dt
         return dt
@@ -201,6 +253,7 @@ class WhippleImpact:
     rear_wall_thickness: float = 1.5
     width: float = 30.0
     resolution: float = 0.1  # particle spacing
+    strength: bool = True
 
     def build(self) -> SPHSolver:
         dx = self.resolution
@@ -213,7 +266,7 @@ class WhippleImpact:
             Body("projectile", proj, np.array([0.0, -self.speed])),
             Body("bumper", bumper, np.zeros(2)),
             Body("rear_wall", rear, np.zeros(2)),
-        ], dx)
+        ], dx, strength=self.strength)
 
     def time_to_rear_wall(self) -> float:
         return (self.standoff + self.bumper_thickness + self.projectile_diameter) / self.speed

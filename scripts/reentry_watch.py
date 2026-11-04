@@ -3,7 +3,7 @@
 Method (docs/PHYSICS.md §10, "recommended configuration"):
 - ballistic coefficient fitted to each object's own decay between a TLE 21-70 days ago (weekly
   Spacebook snapshots in data/history) and today's catalogue (Spacebook mirror, refreshed here);
-- NRLMSIS 2.0 corrected with CHAMP/GRACE/GRACE-FO/Swarm densities older than 90 days (§9);
+- NRLMSIS 2.1 corrected with CHAMP/GRACE/GRACE-FO/Swarm densities older than 90 days (§9);
 - NASA MSFC's latest solar-cycle forecast, anchored to today's 81-day flux (§10); Sun, Moon and J2;
 - 80 % windows from the online conformal calibration of the 2016-2026 hindcast of exactly this
   method (reports/phase3f_rows_*.npz), using its final adaptive level.
@@ -94,7 +94,7 @@ def main():
         "status": "ok", "issued": issue.isoformat(), "objects": rows, "overdue": overdue,
         "n_screened": int(len(s.norad)),
         "alpha": alpha, "hindcast_coverage_1y": cover,
-        "method": (f"Fitted drag, density-corrected NRLMSIS 2.0, NASA MSFC flux forecast; windows calibrated on "
+        "method": (f"Fitted drag, density-corrected NRLMSIS 2.1, NASA MSFC flux forecast; windows calibrated on "
                    f"the 2016-2026 hindcast ({100 * cover:.0f} % of 1-year outcomes inside)."),
     }, indent=0))
     print(f"{len(rows)} objects re-entering within {SHOW_DAYS} days -> {OUT}")

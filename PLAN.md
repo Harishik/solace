@@ -273,7 +273,7 @@ Findings so far, which feed the paper:
   `scripts/run_phase3c.py`, `analyze_phase3c.py`; theory in `docs/PHYSICS.md`). 135 issue dates
   every 28 days from June 2016 to Oct 2026, 326k object forecasts (debris and rocket bodies with
   perigee < 600 km), scored against satcat decay dates. Each object gets a ballistic coefficient
-  fitted to its own mean-motion decay over the previous 21–70 days, using NRLMSIS 2.0 density
+  fitted to its own mean-motion decay over the previous 21–70 days, using NRLMSIS 2.1 density
   driven by the space weather that actually happened, and is then propagated forward under a
   space-weather scenario. Test = issues from 2023 on (49 dates, solar maximum).
 

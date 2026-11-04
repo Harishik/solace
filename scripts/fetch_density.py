@@ -1,4 +1,4 @@
-"""Download open thermospheric density observations and compare them with NRLMSIS 2.0.
+"""Download open thermospheric density observations and compare them with NRLMSIS 2.1.
 
 Sources (ESA Swarm dissemination server, no account needed):
 - GRACE-FO 1, accelerometer-derived (TU Delft TOLEOS, GF_OPER_DNS1ACC_2), 2018-, ~490 km;

@@ -1,0 +1,27 @@
+d=0.6 strength=True: perforated=False deflection=1.37 mm (44s)
+d=0.9 strength=True: perforated=True deflection=2.62 mm (49s)
+d=1.2 strength=True: perforated=True deflection=3.05 mm (57s)
+d=1.5 strength=True: perforated=True deflection=4.49 mm (65s)
+d=1.8 strength=True: perforated=True deflection=6.23 mm (71s)
+d=2.1 strength=True: perforated=True deflection=7.20 mm (78s)
+d=2.5 strength=True: perforated=True deflection=6.17 mm (81s)
+d=0.6 strength=False: perforated=True deflection=1.69 mm (30s)
+d=3.0 strength=True: perforated=True deflection=9.00 mm (90s)
+d=0.9 strength=False: perforated=True deflection=2.64 mm (38s)
+d=1.2 strength=False: perforated=True deflection=3.65 mm (39s)
+d=1.5 strength=False: perforated=True deflection=3.71 mm (46s)
+d=1.8 strength=False: perforated=True deflection=7.35 mm (46s)
+d=2.1 strength=False: perforated=True deflection=7.45 mm (55s)
+d=2.5 strength=False: perforated=True deflection=7.06 mm (54s)
+d=3.0 strength=False: perforated=True deflection=8.76 mm (67s)
+{
+ "ble_critical_diameter_mm": 1.9485267613366006,
+ "threshold_strength_mm": [
+  0.6,
+  0.9
+ ],
+ "threshold_hydro_mm": [
+  null,
+  0.6
+ ]
+}

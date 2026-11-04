@@ -19,6 +19,17 @@ from ..orbit.propagate import MU, R_EARTH, Propagator, jday_array
 ALT_EDGES = np.arange(200.0, 2050.0, 50.0)  # km, 37 bands
 INC_EDGES = np.array([0, 30, 45, 55, 65, 75, 85, 95, 105, 180.0])  # deg; dense near SSO/polar
 KINDS = ("payload", "rocket_body", "debris")
+# Station-kept constellations: members are phased within their own shells, so they do not meet each
+# other at random and must not count as each other's kinetic-gas targets.
+CONSTELLATIONS = ("STARLINK", "ONEWEB", "KUIPER", "QIANFAN", "GUOWANG", "IRIDIUM", "ORBCOMM", "GLOBALSTAR")
+
+
+def constellation_index(name: str) -> int:
+    """Index into CONSTELLATIONS for an operational constellation member, else -1 (debris excluded)."""
+    n = name.upper()
+    if " DEB" in n or " R/B" in n:
+        return -1
+    return next((k for k, c in enumerate(CONSTELLATIONS) if n.startswith(c) or c in n.split()), -1)
 
 
 def kind_index(name: str) -> int:
@@ -34,6 +45,7 @@ def kind_index(name: str) -> int:
 class ShellGrid:
     counts: np.ndarray  # (n_alt, n_inc, n_kind), residence-weighted object counts
     bstar: np.ndarray  # (n_alt, n_inc), mean B* of residents (drag proxy)
+    groups: np.ndarray | None = None  # (n_alt, n_inc, len(CONSTELLATIONS)) constellation members
 
     @property
     def shape(self):
@@ -45,9 +57,12 @@ class ShellGrid:
 
     def spatial_density(self) -> np.ndarray:
         """Objects per km^3 in each altitude band, split across inclination cells by count."""
-        r0, r1 = R_EARTH + ALT_EDGES[:-1], R_EARTH + ALT_EDGES[1:]
-        vol = 4.0 / 3.0 * np.pi * (r1**3 - r0**3)
-        return self.total / vol[:, None]
+        return self.total / band_volume()[:, None]
+
+
+def band_volume() -> np.ndarray:
+    r0, r1 = R_EARTH + ALT_EDGES[:-1], R_EARTH + ALT_EDGES[1:]
+    return 4.0 / 3.0 * np.pi * (r1**3 - r0**3)
 
 
 def elements(tle: TLE) -> tuple[float, float, float, float]:
@@ -77,9 +92,10 @@ def build_grid(tles: list[TLE], when: datetime | None = None, n_samples: int = 2
     when = when or datetime.now(timezone.utc)
     n_alt, n_inc = len(ALT_EDGES) - 1, len(INC_EDGES) - 1
     counts = np.zeros((n_alt, n_inc, len(KINDS)))
+    groups = np.zeros((n_alt, n_inc, len(CONSTELLATIONS)))
     bsum = np.zeros((n_alt, n_inc))
     if not tles:
-        return ShellGrid(counts=counts, bstar=bsum)
+        return ShellGrid(counts=counts, bstar=bsum, groups=groups)
     prop = Propagator(tles)
     jd, fr = jday_array(when, np.linspace(0, window_min * 60, n_samples, endpoint=False))
     r, v, err = prop.states(jd, fr)
@@ -90,6 +106,7 @@ def build_grid(tles: list[TLE], when: datetime | None = None, n_samples: int = 2
     j = np.clip(np.searchsorted(INC_EDGES, inc, side="right") - 1, 0, n_inc - 1)
     a_idx = np.searchsorted(ALT_EDGES, alt, side="right") - 1  # -1 / n_alt mean out of range
     kinds = np.array([kind_index(t.name) for t in tles])
+    grp = np.array([constellation_index(t.name) for t in tles])
     bstar = np.array([s.bstar for s in prop.sats])
     for k in np.nonzero(ok)[0]:
         bins = a_idx[k][(a_idx[k] >= 0) & (a_idx[k] < n_alt)]
@@ -97,22 +114,42 @@ def build_grid(tles: list[TLE], when: datetime | None = None, n_samples: int = 2
             continue
         w = np.bincount(bins, minlength=n_alt) / n_samples
         counts[:, j[k], kinds[k]] += w
+        if grp[k] >= 0:
+            groups[:, j[k], grp[k]] += w
         bsum[:, j[k]] += w * bstar[k]
     tot = counts.sum(axis=-1)
-    return ShellGrid(counts=counts, bstar=np.divide(bsum, tot, out=np.zeros_like(bsum), where=tot > 0))
+    return ShellGrid(counts=counts, bstar=np.divide(bsum, tot, out=np.zeros_like(bsum), where=tot > 0), groups=groups)
 
 
-def kinetic_conjunction_rate(grid: ShellGrid, threshold_km: float = 1.0, v_rel_kms: float = 10.0) -> np.ndarray:
+def kinetic_conjunction_rate(grid: ShellGrid, threshold_km: float = 1.0, v_rel_kms: float = 10.0,
+                             coordinated: bool = False) -> np.ndarray:
     """Expected close approaches (< threshold) per day in each cell from kinetic gas theory:
     rate = 1/2 * N * n * sigma * v_rel, with sigma = pi * threshold^2.
 
     Inclination cells share the altitude band's volume, so cross-inclination encounters (which
-    dominate LEO conjunctions) are counted through the band density.
+    dominate LEO conjunctions) are counted through the band density. With `coordinated` (and a grid
+    that records constellation membership), pairs inside the same station-kept constellation are
+    removed: rate = 1/2 sigma v (N n - sum_g N_g n_g).
     """
+    vol = band_volume()[:, None]
     n_band = grid.spatial_density().sum(axis=1, keepdims=True)  # objects / km^3 in the band
-    sigma = np.pi * threshold_km**2
-    per_s = 0.5 * grid.total * n_band * sigma * v_rel_kms
+    pairs = grid.total * n_band
+    if coordinated and grid.groups is not None:
+        n_g = grid.groups.sum(axis=1, keepdims=True) / vol[..., None]
+        pairs = pairs - (grid.groups * n_g).sum(axis=-1)
+    per_s = 0.5 * np.maximum(pairs, 0.0) * np.pi * threshold_km**2 * v_rel_kms
     return per_s * 86400.0
+
+
+def object_conjunction_rate(grid: ShellGrid, a: float, e: float, group: int = -1, threshold_km: float = 1.0,
+                            v_rel_kms: float = 10.0) -> float:
+    """Expected close approaches per day for one object on orbit (a, e), kinetic gas theory. A
+    constellation member (`group` >= 0) does not count its own constellation as targets."""
+    n = grid.total.sum(axis=1)
+    if group >= 0 and grid.groups is not None:
+        n = n - grid.groups[..., group].sum(axis=1)
+    w = residence_weights(a, e)
+    return float((w * n / band_volume()).sum() * np.pi * threshold_km**2 * v_rel_kms * 86400.0)
 
 
 def adjacency(n_alt: int | None = None, n_inc: int | None = None) -> np.ndarray:

@@ -9,7 +9,7 @@ does debris conjunction screening and hypervelocity impact physics, and runs a l
 ## Re-entry forecasting: the core result
 
 Each object gets a ballistic coefficient fitted from its own orbital decay. It is then
-propagated through NRLMSIS 2.0 density with J2 and Sun/Moon perturbations, under a forecast of
+propagated through NRLMSIS 2.1 density with J2 and Sun/Moon perturbations, under a forecast of
 the solar cycle. This was tested on 135 forecast dates from 2016 to 2026 (326k forecasts,
 39,814 re-entries), using only data available on each date.
 
