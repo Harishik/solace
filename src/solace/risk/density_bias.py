@@ -1,4 +1,4 @@
-"""Empirical correction to NRLMSIS 2.0 from observed thermospheric densities.
+"""Empirical correction to NRLMSIS 2.1 from observed thermospheric densities.
 
 Satellite densities (CHAMP, GRACE, GRACE-FO accelerometers; Swarm B/C precise orbits;
 scripts/fetch_density.py) give delta = log(rho_observed / rho_MSIS) at ~300-530 km, 2000-2026.

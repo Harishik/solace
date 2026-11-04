@@ -1,0 +1,205 @@
+{
+ "ble_critical_diameter_mm": 1.9485267613366006,
+ "runs": [
+  {
+   "time_us": 4.600135125666918,
+   "bumper_hole_mm": 2.4,
+   "hole_to_projectile": 4.0,
+   "cloud_half_angle_deg": 28.95571863958047,
+   "rear_wall_max_displacement_mm": 1.3747605879319842,
+   "rear_wall_perforated": false,
+   "p99_pressure_GPa": 1.8926500197638703,
+   "diameter_mm": 0.6,
+   "strength": true,
+   "wall_s": 44.16330814361572
+  },
+  {
+   "time_us": 4.689837696162931,
+   "bumper_hole_mm": 4.5,
+   "hole_to_projectile": 5.0,
+   "cloud_half_angle_deg": 58.270756007055056,
+   "rear_wall_max_displacement_mm": 2.615810670378327,
+   "rear_wall_perforated": true,
+   "p99_pressure_GPa": 1.5272138021383306,
+   "diameter_mm": 0.9,
+   "strength": true,
+   "wall_s": 49.32383465766907
+  },
+  {
+   "time_us": 4.773971356217425,
+   "bumper_hole_mm": 3.4499999999999997,
+   "hole_to_projectile": 2.875,
+   "cloud_half_angle_deg": 54.27587813625615,
+   "rear_wall_max_displacement_mm": 3.053441137553744,
+   "rear_wall_perforated": true,
+   "p99_pressure_GPa": 4.447736279630469,
+   "diameter_mm": 1.2,
+   "strength": true,
+   "wall_s": 57.374610900878906
+  },
+  {
+   "time_us": 4.860103066051433,
+   "bumper_hole_mm": 2.85,
+   "hole_to_projectile": 1.9000000000000001,
+   "cloud_half_angle_deg": 51.47746077573322,
+   "rear_wall_max_displacement_mm": 4.486269405120208,
+   "rear_wall_perforated": true,
+   "p99_pressure_GPa": 19.993495966305503,
+   "diameter_mm": 1.5,
+   "strength": true,
+   "wall_s": 65.46553206443787
+  },
+  {
+   "time_us": 4.945623098796366,
+   "bumper_hole_mm": 5.25,
+   "hole_to_projectile": 2.9166666666666665,
+   "cloud_half_angle_deg": 49.16767121944836,
+   "rear_wall_max_displacement_mm": 6.233847621812732,
+   "rear_wall_perforated": true,
+   "p99_pressure_GPa": 38.38580629504423,
+   "diameter_mm": 1.8,
+   "strength": true,
+   "wall_s": 71.41354393959045
+  },
+  {
+   "time_us": 5.029634856950388,
+   "bumper_hole_mm": 6.6,
+   "hole_to_projectile": 3.1428571428571423,
+   "cloud_half_angle_deg": 61.37388800277558,
+   "rear_wall_max_displacement_mm": 7.197003492547026,
+   "rear_wall_perforated": true,
+   "p99_pressure_GPa": 60.47324930827563,
+   "diameter_mm": 2.1,
+   "strength": true,
+   "wall_s": 78.38670587539673
+  },
+  {
+   "time_us": 5.1440773730039275,
+   "bumper_hole_mm": 6.45,
+   "hole_to_projectile": 2.58,
+   "cloud_half_angle_deg": 62.18251001439661,
+   "rear_wall_max_displacement_mm": 6.171191883859596,
+   "rear_wall_perforated": true,
+   "p99_pressure_GPa": 77.53623904497834,
+   "diameter_mm": 2.5,
+   "strength": true,
+   "wall_s": 80.81760692596436
+  },
+  {
+   "time_us": 5.287225878296744,
+   "bumper_hole_mm": 7.5,
+   "hole_to_projectile": 2.5,
+   "cloud_half_angle_deg": 54.89132889816112,
+   "rear_wall_max_displacement_mm": 9.00392001286199,
+   "rear_wall_perforated": true,
+   "p99_pressure_GPa": 119.44665752343916,
+   "diameter_mm": 3.0,
+   "strength": true,
+   "wall_s": 90.44501399993896
+  },
+  {
+   "time_us": 4.601452399148051,
+   "bumper_hole_mm": 3.5999999999999996,
+   "hole_to_projectile": 6.0,
+   "cloud_half_angle_deg": 48.49446246348157,
+   "rear_wall_max_displacement_mm": 1.6948801282170294,
+   "rear_wall_perforated": true,
+   "p99_pressure_GPa": 1.9650213812820099,
+   "diameter_mm": 0.6,
+   "strength": false,
+   "wall_s": 30.468131065368652
+  },
+  {
+   "time_us": 4.687403498247602,
+   "bumper_hole_mm": 3.9,
+   "hole_to_projectile": 4.333333333333333,
+   "cloud_half_angle_deg": 44.06322330432567,
+   "rear_wall_max_displacement_mm": 2.6355345706408535,
+   "rear_wall_perforated": true,
+   "p99_pressure_GPa": 3.0883441974485537,
+   "diameter_mm": 0.9,
+   "strength": false,
+   "wall_s": 37.67255210876465
+  },
+  {
+   "time_us": 4.771556982974103,
+   "bumper_hole_mm": 4.05,
+   "hole_to_projectile": 3.375,
+   "cloud_half_angle_deg": 50.292941985490486,
+   "rear_wall_max_displacement_mm": 3.648154347459773,
+   "rear_wall_perforated": true,
+   "p99_pressure_GPa": 3.7388077385902725,
+   "diameter_mm": 1.2,
+   "strength": false,
+   "wall_s": 39.25216221809387
+  },
+  {
+   "time_us": 4.859041335026091,
+   "bumper_hole_mm": 2.85,
+   "hole_to_projectile": 1.9000000000000001,
+   "cloud_half_angle_deg": 49.92454021073846,
+   "rear_wall_max_displacement_mm": 3.712019761309044,
+   "rear_wall_perforated": true,
+   "p99_pressure_GPa": 8.424663285837948,
+   "diameter_mm": 1.5,
+   "strength": false,
+   "wall_s": 46.0373649597168
+  },
+  {
+   "time_us": 4.946036771616239,
+   "bumper_hole_mm": 5.25,
+   "hole_to_projectile": 2.9166666666666665,
+   "cloud_half_angle_deg": 53.38629935956603,
+   "rear_wall_max_displacement_mm": 7.353469545363666,
+   "rear_wall_perforated": true,
+   "p99_pressure_GPa": 49.7221551766131,
+   "diameter_mm": 1.8,
+   "strength": false,
+   "wall_s": 45.892436265945435
+  },
+  {
+   "time_us": 5.029979283176031,
+   "bumper_hole_mm": 6.3,
+   "hole_to_projectile": 3.0,
+   "cloud_half_angle_deg": 59.59689528433474,
+   "rear_wall_max_displacement_mm": 7.453564754329921,
+   "rear_wall_perforated": true,
+   "p99_pressure_GPa": 55.045118139006846,
+   "diameter_mm": 2.1,
+   "strength": false,
+   "wall_s": 55.39944005012512
+  },
+  {
+   "time_us": 5.144802421683979,
+   "bumper_hole_mm": 7.199999999999999,
+   "hole_to_projectile": 2.88,
+   "cloud_half_angle_deg": 56.80953248652291,
+   "rear_wall_max_displacement_mm": 7.05887429926376,
+   "rear_wall_perforated": true,
+   "p99_pressure_GPa": 76.57156361407306,
+   "diameter_mm": 2.5,
+   "strength": false,
+   "wall_s": 54.224465131759644
+  },
+  {
+   "time_us": 5.287770724750125,
+   "bumper_hole_mm": 7.6499999999999995,
+   "hole_to_projectile": 2.55,
+   "cloud_half_angle_deg": 55.41995269839571,
+   "rear_wall_max_displacement_mm": 8.76076394347503,
+   "rear_wall_perforated": true,
+   "p99_pressure_GPa": 102.9305102695619,
+   "diameter_mm": 3.0,
+   "strength": false,
+   "wall_s": 66.88106393814087
+  }
+ ],
+ "threshold_strength_mm": [
+  0.6,
+  0.9
+ ],
+ "threshold_hydro_mm": [
+  null,
+  0.6
+ ]
+}

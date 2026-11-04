@@ -48,7 +48,7 @@ def drivers_for(days: list[date], sw: dict[date, dict] | None = None) -> np.ndar
 
 
 def shell_density(f107: float, f107a: float, ap: float, when: np.datetime64 | None = None) -> np.ndarray:
-    """NRLMSIS 2.0 mass density (kg/m^3) at each altitude-band midpoint, zonally averaged.
+    """NRLMSIS 2.1 mass density (kg/m^3) at each altitude-band midpoint, zonally averaged.
 
     Averaging over a coarse lat/lon grid removes the day/night bulge, leaving the global level
     that controls orbit-averaged decay.

@@ -2511,5 +2511,5 @@
 "n_screened": 2176,
 "alpha": 0.13702118153436982,
 "hindcast_coverage_1y": 0.7730838413110822,
-"method": "Fitted drag, density-corrected NRLMSIS 2.0, NASA MSFC flux forecast; windows calibrated on the 2016-2026 hindcast (77 % of 1-year outcomes inside)."
+"method": "Fitted drag, density-corrected NRLMSIS 2.1, NASA MSFC flux forecast; windows calibrated on the 2016-2026 hindcast (77 % of 1-year outcomes inside)."
 }

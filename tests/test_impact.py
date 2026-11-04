@@ -50,3 +50,26 @@ def test_sph_conserves_momentum():
     p0 = sol.momentum()
     sol.run(0.3)
     assert np.allclose(sol.momentum(), p0, rtol=1e-9, atol=1e-12)
+
+
+def test_sph_strength_sits_on_yield_surface_in_uniaxial_strain():
+    # Plate impact well above the Hugoniot elastic limit (~0.6 GPa): shocked material is in uniaxial
+    # strain on the von Mises surface, S_yy = -2Y/3 and S_xx = S_zz = +Y/3. Post-shock ringing (no
+    # artificial stress term) leaves part of it slightly inside the surface, hence the tolerance.
+    dx = 0.05
+    target = lattice_box(-3, 3, 0, 1.5, dx)
+    flyer = lattice_box(-3, 3, 1.5, 3.0, dx)
+    sol = SPHSolver([Body("t", target, np.zeros(2)), Body("f", flyer, np.array([0.0, -0.4]))], dx)
+    sol.run(0.08)
+    s, Y = sol.state, sol.m.yield_stress
+    m = (np.abs(s.pos[:, 0]) < 1.0) & (np.abs(s.vel[:, 1] + 0.2) < 0.04)  # shocked to u_p = 0.2
+    syy, sxx = np.median(s.sdev[m, 1]), np.median(s.sdev[m, 0])
+    assert -0.75 * Y < syy < -0.4 * Y
+    assert sxx == pytest.approx(-syy / 2, rel=0.05)
+    vm = np.sqrt(1.5 * (s.sdev[:, :3] ** 2).sum(1) + 3 * s.sdev[:, 3] ** 2)
+    assert vm.max() <= Y * (1 + 1e-9)
+    # Hydrodynamic run of the same impact carries no deviatoric stress.
+    hyd = SPHSolver([Body("t", target, np.zeros(2)), Body("f", flyer, np.array([0.0, -0.4]))], dx,
+                    strength=False)
+    hyd.run(0.02)
+    assert not hyd.state.sdev.any()

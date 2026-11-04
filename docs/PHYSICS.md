@@ -109,7 +109,7 @@ long-term predictions are off by more than a year even with observed flux.
   atmospheric co-rotation. Steps adapt so each step changes perigee by less than about
   H/4. Re-entry is declared when perigee altitude < 120 km for a near-circular orbit
   (the remaining lifetime is then under a day).
-- **Density**: NRLMSIS 2.0 via pymsis, averaged over latitude and local time, tabulated
+- **Density**: NRLMSIS 2.1 via pymsis (its default version), averaged over latitude and local time, tabulated
   daily in log ρ against altitude (80–1000 km) for the observed F10.7, F10.7a and Ap.
   It is interpolated linearly in log ρ.
 - **Ballistic coefficient**: Saunders-style fit over the previous 28–56 days of weekly TLEs,
@@ -276,7 +276,7 @@ second or third day and kept 5-minute samples:
 | Swarm B, C | 2014–2026 | 450–520 km | precise orbits (ESA) |
 | GRACE-FO 1 | 2018–2026 | ~490 km | accelerometer (TU Delft) |
 
-For each sample, NRLMSIS 2.0 runs at the satellite's own position and time, with the same
+For each sample, NRLMSIS 2.1 runs at the satellite's own position and time, with the same
 F10.7/Ap drivers as the re-entry model. This gives δ = ln(ρ_obs / ρ_MSIS). We keep daily
 medians, about 8,900 days in all.
 

@@ -1,0 +1,11 @@
+{
+ "n_spacebook_decays": 6902,
+ "n_compared": 6899,
+ "missing_in_celestrak": 3,
+ "decayed_in_celestrak_only": 7,
+ "exact_match": 0.8714306421220467,
+ "within_1_day": 0.9133207711262502,
+ "within_7_days": 0.993767212639513,
+ "median_abs_diff_days": 0.0,
+ "max_abs_diff_days": 981
+}
