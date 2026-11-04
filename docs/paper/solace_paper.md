@@ -303,6 +303,23 @@ two weeks of TLE decay is noisy; longer baselines are as good as the default. Wi
 forecasts all variants are equivalent: the solar forecast, not the drag fit or the density model,
 limits the skill.
 
+**Sensitivity to the MSFC anchoring.** The anchoring of the MSFC forecast to the current 81-day flux
+(Section 3.3) was chosen after seeing 2024–25, so we reran the MSFC forecasts with the alternatives
+(Table 5).
+
+**Table 5.** MSFC anchoring variants: change in median 1-year error against the 1-year fade (points).
+
+| Variant | All years | 2023+ |
+|---|---|---|
+| No anchoring (median forecast as issued) | +1.5 [−1.2, +4.5] | +2.4 [−1.3, +9.2] |
+| Anchoring fades over 6 months | **−0.8 [−1.6, −0.2]** | −0.8 [−2.1, +0.2] |
+| Anchoring fades over 2 years | **+0.6 [+0.2, +1.3]** | +0.6 [−0.1, +1.3] |
+
+Anchoring helps on average, mostly in the test years, but the gain is within the uncertainty. The fade
+length matters by less than a point either way, and our default is not the best of the three: a
+6-month fade is slightly better. We keep the 1-year default rather than re-tune it on the same data. None
+of the conclusions depends on this choice.
+
 ### 4.7 What did not work
 
 * **Learned residuals.** A gradient-boosted correction of the analog forecast trained on object features

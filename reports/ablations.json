@@ -160,5 +160,101 @@
     "n_reentries": 38518
    }
   }
+ },
+ "msfc_raw": {
+  "label": "MSFC median flux as issued, no anchoring",
+  "n_issues_done": 135,
+  "n_rows_matched": 326410,
+  "n_rows_ablation": 326410,
+  "test_2023plus": {
+   "msfc": {
+    "baseline": 0.18446636299913183,
+    "ablation": 0.208331140832256,
+    "diff": 0.023864777833124184,
+    "diff_ci95": [
+     -0.012506737416152621,
+     0.09240654699380914
+    ],
+    "p_ablation_not_worse": 0.1205,
+    "n_reentries": 17336
+   }
+  },
+  "all_years": {
+   "msfc": {
+    "baseline": 0.17907163834690676,
+    "ablation": 0.19413478764684203,
+    "diff": 0.015063149299935269,
+    "diff_ci95": [
+     -0.012225233282657063,
+     0.045233516545764976
+    ],
+    "p_ablation_not_worse": 0.147,
+    "n_reentries": 39814
+   }
+  }
+ },
+ "msfc_f182": {
+  "label": "anchoring fades over 6 months (default 1 year)",
+  "n_issues_done": 135,
+  "n_rows_matched": 326410,
+  "n_rows_ablation": 326410,
+  "test_2023plus": {
+   "msfc": {
+    "baseline": 0.18446636299913183,
+    "ablation": 0.17606440381659857,
+    "diff": -0.008401959182533253,
+    "diff_ci95": [
+     -0.020864515593660114,
+     0.0019008490653364643
+    ],
+    "p_ablation_not_worse": 0.951,
+    "n_reentries": 17336
+   }
+  },
+  "all_years": {
+   "msfc": {
+    "baseline": 0.17907163834690676,
+    "ablation": 0.17086345959806498,
+    "diff": -0.008208178748841777,
+    "diff_ci95": [
+     -0.01600214613661576,
+     -0.0020776639991756337
+    ],
+    "p_ablation_not_worse": 0.991,
+    "n_reentries": 39814
+   }
+  }
+ },
+ "msfc_f730": {
+  "label": "anchoring fades over 2 years",
+  "n_issues_done": 135,
+  "n_rows_matched": 326410,
+  "n_rows_ablation": 326410,
+  "test_2023plus": {
+   "msfc": {
+    "baseline": 0.18446636299913183,
+    "ablation": 0.19041482463700424,
+    "diff": 0.00594846163787241,
+    "diff_ci95": [
+     -0.0012395270518831298,
+     0.012850428668213376
+    ],
+    "p_ablation_not_worse": 0.054,
+    "n_reentries": 17336
+   }
+  },
+  "all_years": {
+   "msfc": {
+    "baseline": 0.17907163834690676,
+    "ablation": 0.18552388242154358,
+    "diff": 0.00645224407463682,
+    "diff_ci95": [
+     0.0018826919810223108,
+     0.01272747717072252
+    ],
+    "p_ablation_not_worse": 0.003,
+    "n_reentries": 39814
+   }
+  }
  }
 }
