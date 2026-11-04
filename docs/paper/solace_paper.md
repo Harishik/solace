@@ -295,6 +295,7 @@ better).
 | NRLMSISE-00 instead of NRLMSIS 2.1 | +0.1 [−0.9, +0.9] | −0.5 [−1.9, +1.0] | −0.1 [−1.5, +1.0] | −0.8 [−3.2, +1.0] |
 | Drag-fit baseline 14–40 d (default 21–70 d) | **+1.0 [+0.5, +1.4]** | +0.7 [−0.1, +1.4] | +0.1 [−0.5, +0.6] | +0.1 [−1.2, +1.0] |
 | Drag-fit baseline 40–100 d | −0.1 [−0.5, +0.5] | +0.3 [−0.2, +1.0] | +0.3 [−0.3, +1.2] | +0.6 [−0.6, +1.8] |
+| Density at each node's latitude and local time (default: orbit mean) | **−1.1 [−1.5, −0.7]** | **−0.8 [−1.4, −0.4]** | **−0.6 [−1.1, −0.0]** | −0.2 [−1.1, +0.5] |
 
 The choice of atmosphere model does not matter: the fitted ballistic coefficient absorbs whatever bias a
 model has over the baseline, so only changes in that bias over the following year affect the forecast,
@@ -303,6 +304,17 @@ solar flux, not through its average level. A short drag-fit baseline is worse wi
 two weeks of TLE decay is noisy; longer baselines are as good as the default. With realistic solar
 forecasts all variants are equivalent: the solar forecast, not the drag fit or the density model,
 limits the skill.
+
+Evaluating density along the orbit is the one change that helps. In the default, density at each of
+the 32 quadrature nodes is the NRLMSIS value at that altitude averaged over latitude and local time. In
+the variant it is taken at the node's actual latitude and local solar time (the orbit's orientation
+relative to the Sun, from a precomputed NRLMSIS table over flux level, month, altitude, latitude and
+local time). This reduces the true-weather error by 1.1 points [0.7, 1.5] over the decade and the MSFC
+error by 0.6 [0.0, 1.1]: a real but small gain, about a sixth of the gap to the true-weather bound,
+because the fitted ballistic coefficient already absorbs most of an orbit's mean geometry and only its
+slow drift (precession of the orbit relative to the Sun, seasons) is left to model. We keep the
+orbit-mean density as the headline configuration, which was fixed before this test, and report the
+along-orbit variant as an option; it doubles the run time.
 
 **Sensitivity to the MSFC anchoring.** The anchoring of the MSFC forecast to the current 81-day flux
 (Section 3.3) was chosen after seeing 2024–25, so we reran the MSFC forecasts with the alternatives
@@ -381,8 +393,9 @@ it runs on a laptop and is issued daily in the accompanying open application. Ca
 tuning beyond the hindcast itself, and the calibration set grows as objects re-enter.
 
 **Limitations.** (i) The truth is the public catalogue decay date; we did not compare with operational
-predictions such as 18th Space Defense Squadron decay messages, which require an account. (ii) Density is
-averaged over latitude and local time; this is appropriate for lifetime but not for the final orbits.
+predictions such as 18th Space Defense Squadron decay messages, which require an account. (ii) The headline
+configuration averages density over latitude and local time; evaluating it along the orbit is
+slightly better (Section 4.6), and neither resolves the final orbits.
 (iii) The analysis covers the declining phase of Cycle 24 and Cycle 25 only. (iv) Several method choices
 (MSFC anchoring, the density correction) were made after seeing the 2024–25 results; we therefore report
 all variants and their uncertainty, test the sensitivity to the anchoring (Section 4.6), and emphasise

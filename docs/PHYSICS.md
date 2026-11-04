@@ -456,3 +456,19 @@ median 1-year error 17.9 % with MSFC and 12.2 % with the true weather (debris 17
 was no re-entry at all: they were deliberately de-orbited. Payload windows cover 70 % instead of 80 %:
 payload re-entries are fewer and more bunched in time than debris, so the online calibration has less
 to learn from. Details in `reports/payloads.json` and paper Section 4.7.
+
+## 13. Density along the orbit
+
+The default model averages NRLMSIS density over latitude and local time at each altitude. The thermosphere
+is denser on the dayside (peak near 14 h local time) and its latitude structure changes with season, so
+an orbit whose plane faces the Sun sees more drag than the average. `decay.GEOMETRY = True` instead
+evaluates density at each of the 32 quadrature nodes' actual latitude and local solar time: a table of
+NRLMSIS ratios to the latitude/local-time mean over flux level, month, altitude, latitude and local time
+(`data/msis_geometry_v2.1.npz`, built once) is interpolated at each node, with the node's position from
+the orbit's P/Q frame and a low-precision Sun right ascension.
+
+Over the full hindcast (`scripts/run_ablation.py --geometry`) this reduces the median 1-year error by
+1.1 points [0.7, 1.5] with the true weather and 0.6 [0.0, 1.1] with MSFC. The gain is small because the
+fitted ballistic coefficient absorbs an orbit's average geometry over the drag-fit window; only the slow
+drift of the orbit plane relative to the Sun, and the seasons, are left. It doubles the run time, so it
+is an option rather than the default.
