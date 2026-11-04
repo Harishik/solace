@@ -95,7 +95,8 @@ def test_axisymmetric_plate_impact_matches_hugoniot_on_and_off_axis():
 
 
 def test_tillotson_reference_state_and_compression():
-    from solace.impact.sph import TILLOTSON_AL as T, tillotson
+    from solace.impact.sph import TILLOTSON_AL as T
+    from solace.impact.sph import tillotson
 
     assert abs(tillotson(np.array([T.rho0]), np.array([0.0]))[0]) < 1e-12
     p = tillotson(np.array([1.1 * T.rho0]), np.array([0.0]))[0]
