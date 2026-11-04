@@ -1,0 +1,8 @@
+starlink <   1 km  actual     7 (4 same-constellation)  kinetic raw     35.2 (x5.03)  excluding own      2.7 (x0.39)
+starlink <   2 km  actual    15 (7 same-constellation)  kinetic raw    140.7 (x9.38)  excluding own     10.9 (x0.73)
+starlink <   5 km  actual   350 (306 same-constellation)  kinetic raw    879.6 (x2.51)  excluding own     68.0 (x0.19)
+starlink <  10 km  actual  2263 (2069 same-constellation)  kinetic raw   3518.3 (x1.55)  excluding own    272.1 (x0.12)
+others   <   1 km  actual     8 (0 same-constellation)  kinetic raw      5.6 (x0.70)  excluding own      5.6 (x0.70)
+others   <   2 km  actual    27 (0 same-constellation)  kinetic raw     22.5 (x0.83)  excluding own     22.5 (x0.83)
+others   <   5 km  actual   103 (0 same-constellation)  kinetic raw    140.8 (x1.37)  excluding own    140.8 (x1.37)
+others   <  10 km  actual   432 (0 same-constellation)  kinetic raw    563.3 (x1.30)  excluding own    563.3 (x1.30)

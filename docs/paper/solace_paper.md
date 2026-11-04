@@ -7,7 +7,8 @@
 1. A ten-year hindcast of 326,410 re-entry forecasts for 8,060 debris objects and rocket bodies, issued
    every 28 days from 2016 to 2026 with only information available at the time.
 2. Physics with drag fitted to each object's own decay cuts the 1-year timing error from 200 % (SGP4)
-   to 17–18 %; cycle-aware flux forecasts beat persistence significantly, but not each other.
+   to 17–18 %; cycle-aware flux forecasts beat persistence, and on a proper score over all objects
+   NASA Marshall's archived forecasts beat a solar-cycle analog after the Cycle 25 maximum.
 3. Online adaptive conformal windows stay calibrated through both turning points of the cycle only
    when an archived operational flux forecast and a density-model correction are combined.
 
@@ -37,8 +38,10 @@ within a year, the median 1-year timing error is 200 % for SGP4 with frozen B\*,
 28.1] under persistence of the 81-day flux, 17.5 % [15.2, 20.8] with a solar-cycle analog, 17.9 %
 [15.7, 20.5] with NASA Marshall's archived monthly forecasts used as issued, and 11.6 % [10.6, 13.3]
 with the true future weather. Cycle-aware forecasts beat persistence significantly over the decade
-(block-bootstrap P = 0.002 for MSFC), but no realistic flux forecast beats another: the remaining gap
-to the true-weather bound is a solar-predictability floor. A correction to NRLMSIS fitted to CHAMP,
+(block-bootstrap P = 0.002 for MSFC). On median timing error no realistic flux forecast beats another,
+but on the Brier score for re-entry within 90, 180 and 365 days, computed over all forecasts, MSFC
+beats the analog on the 2023–2026 test years (P ≤ 0.02 at every horizon); about 6 points of median error
+to the true-weather bound remain, a solar-predictability floor. A correction to NRLMSIS fitted to CHAMP,
 GRACE, GRACE-FO and Swarm densities removes the model's solar-minimum bias (2020 median log error
 −0.10 → −0.01) and lowers re-entry count errors by 20 % with known weather, without changing timing.
 Online adaptive conformal 80 % windows reach 0.81 coverage after 2023 and stay at 0.73–0.90 in every
@@ -89,7 +92,9 @@ bodies (object types from the Spacebook satellite catalogue) and every distinct 
 
 **Truth.** Decay dates from the Spacebook satellite catalogue. An object counts as re-entered within
 horizon *H* of an issue date only if the decay date is known and the catalogue extends at least *H*
-beyond the issue date (right-censoring is handled by the `known_until` field).
+beyond the issue date (right-censoring is handled by the `known_until` field). Against CelesTrak's
+independently maintained SATCAT, 87 % of the 6,899 cohort decay dates since June 2016 match exactly,
+91 % within a day and 99.4 % within a week; 10 objects are listed as decayed in only one of the two.
 
 **Space weather.** Daily observed F10.7 and Ap from the CelesTrak space-weather file (1957–2026).
 
@@ -162,7 +167,13 @@ inference; Gibbs & Candès, 2021).
 ### 3.6 Evaluation
 
 The primary metric is the median relative timing error |t̂ − t|/t at a 1-year horizon, over re-entries
-within the horizon. We also report the share within 20 %, the absolute error in the number of re-entries
+within the horizon. Because this conditions on the outcome, we also score every forecast with the Brier
+score for the event "re-enters within *H* days" (*H* = 90, 180, 365). Its status is known for every
+object once *H* has passed, so no censoring correction is needed. Each point forecast becomes a
+probability through the empirical distribution of log(actual/forecast) among earlier forecasts issued
+at least two years before (fully resolved), by lead time and perigee band; forecasts of no re-entry
+within the model horizon take the observed event rate of earlier such forecasts. Skill is relative to
+the climatological event rate. We also report the share within 20 %, the absolute error in the number of re-entries
 per issue date, coverage of the 80 % windows, and the interval score in log-time (Gneiting & Raftery,
 2007), which rewards narrow windows and penalises misses. Forecasts issued on one date share the same
 solar error, and neighbouring dates the same phase of the cycle, so we resample issue dates in circular
@@ -190,6 +201,23 @@ Over the decade, cycle-aware forecasts beat persistence: analog by 5.0 points [0
 MSFC by 4.6 points [1.5, 8.7] (P = 0.002), with count errors 20–22 lower per date. Among the realistic
 flux forecasts, no difference is significant (e.g. MSFC − analog: +0.4 points [−2.7, +3.6] over the
 decade, −1.1 [−6.8, +2.2] after 2023).
+
+**Table 1b.** Brier skill against climatology for "re-enters within *H*", all forecasts, 2023–2026
+test years (37–47 issue dates, 87k–108k forecasts), with 95 % intervals; and the paired Brier
+difference MSFC − analog (negative favours MSFC).
+
+| | 90 days | 180 days | 1 year |
+|---|---|---|---|
+| SGP4 | 0.736 [0.718, 0.752] | 0.710 [0.686, 0.729] | 0.558 [0.501, 0.621] |
+| Persistence | 0.780 [0.748, 0.804] | 0.797 [0.737, 0.844] | 0.803 [0.707, 0.868] |
+| Analog | 0.782 [0.743, 0.806] | 0.805 [0.757, 0.840] | 0.835 [0.784, 0.868] |
+| MSFC | 0.802 [0.785, 0.818] | 0.840 [0.819, 0.857] | 0.867 [0.853, 0.877] |
+| MSFC + corrected density | 0.796 [0.777, 0.815] | 0.832 [0.816, 0.847] | 0.851 [0.837, 0.863] |
+| True weather | 0.834 [0.818, 0.849] | 0.876 [0.865, 0.886] | 0.895 [0.883, 0.906] |
+| ΔBrier MSFC − analog | −0.0013 (P = 0.018) | −0.0039 (P = 0.001) | −0.0057 (P = 0.006) |
+
+Over 2018–2026 (96–103 dates) the ranking of persistence and SGP4 is the same, and MSFC and the analog
+are statistically tied at 1 year (ΔBrier +0.0009 [−0.0033, +0.0045]).
 
 ### 4.2 Where the error comes from
 
@@ -254,7 +282,26 @@ true-weather error after 2023 from 34 % to 16 %; at e < 0.2 they change nothing.
 
 ### 4.6 Ablations
 
-*(Pending: NRLMSISE-00 in place of NRLMSIS 2.1; drag-fit baselines of 14–40 and 40–100 days.)*
+We reran the full hindcast (135 issue dates) with one change at a time, refitting the ballistic
+coefficient each time, and compared the median 1-year error on the same (issue, object) pairs with the
+baseline (Table 4; differences with 95 % block-bootstrap intervals, `scripts/analyze_ablations.py`).
+
+**Table 4.** Ablations: change in median 1-year relative timing error (percentage points; negative is
+better).
+
+| Change | True weather, all years | True weather, 2023+ | MSFC, all years | MSFC, 2023+ |
+|---|---|---|---|---|
+| NRLMSISE-00 instead of NRLMSIS 2.1 | +0.1 [−0.9, +0.9] | −0.5 [−1.9, +1.0] | −0.1 [−1.5, +1.0] | −0.8 [−3.2, +1.0] |
+| Drag-fit baseline 14–40 d (default 21–70 d) | **+1.0 [+0.5, +1.4]** | +0.7 [−0.1, +1.4] | +0.1 [−0.5, +0.6] | +0.1 [−1.2, +1.0] |
+| Drag-fit baseline 40–100 d | −0.1 [−0.5, +0.5] | +0.3 [−0.2, +1.0] | +0.3 [−0.3, +1.2] | +0.6 [−0.6, +1.8] |
+
+The choice of atmosphere model does not matter: the fitted ballistic coefficient absorbs whatever bias a
+model has over the baseline, so only changes in that bias over the following year affect the forecast,
+and for NRLMSISE-00 and NRLMSIS 2.1 these are small. This is also why the empirical density correction (Section 3.4) helps through its dependence on
+solar flux, not through its average level. A short drag-fit baseline is worse with true weather, because
+two weeks of TLE decay is noisy; longer baselines are as good as the default. With realistic solar
+forecasts all variants are equivalent: the solar forecast, not the drag fit or the density model,
+limits the skill.
 
 ### 4.7 What did not work
 
@@ -283,7 +330,8 @@ predictions such as 18th Space Defense Squadron decay messages, which require an
 averaged over latitude and local time; this is appropriate for lifetime but not for the final orbits.
 (iii) The analysis covers the declining phase of Cycle 24 and Cycle 25 only. (iv) Several method choices
 (MSFC anchoring, the density correction) were made after seeing the 2024–25 results; we therefore report
-all variants and their uncertainty, and emphasise the full-decade numbers. (v) Payloads are excluded.
+all variants and their uncertainty, test the sensitivity to the anchoring (Section 4.6), and emphasise
+the full-decade numbers. (v) Payloads are excluded.
 
 ## 6. Conclusions
 

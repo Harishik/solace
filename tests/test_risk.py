@@ -57,3 +57,21 @@ def test_asset_risk_grows_with_area_and_time():
     a = asset_risk(tles[0], g, days=30, area_m2=10).expected_penetrations
     b = asset_risk(tles[0], g, days=60, area_m2=20).expected_penetrations
     assert b == pytest.approx(4 * a)
+
+
+def test_intra_constellation_weight_scales_only_same_constellation_pairs():
+    from solace.risk.shells import CONSTELLATIONS, ShellGrid, kinetic_conjunction_rate
+
+    counts = np.zeros((36, 9, 3))
+    groups = np.zeros((36, 9, len(CONSTELLATIONS)))
+    counts[6, 3, 0] = 1000.0  # a 1000-satellite shell, all in one constellation
+    groups[6, 3, 0] = 1000.0
+    counts[6, 5, 2] = 50.0  # plus 50 debris in the same altitude band
+    g = ShellGrid(counts=counts, bstar=np.zeros((36, 9)), groups=groups)
+    raw = kinetic_conjunction_rate(g)
+    none = kinetic_conjunction_rate(g, intra_weight=0.0)
+    half = kinetic_conjunction_rate(g, intra_weight=0.5)
+    assert np.isclose(half[6, 3], 0.5 * (raw[6, 3] + none[6, 3]))
+    assert np.isclose(none[6, 5], raw[6, 5])  # debris cell unchanged
+    # With no same-constellation pairs left, the shell only meets the debris: N_shell * n_debris.
+    assert np.isclose(none[6, 3] / raw[6, 3], 50.0 / 1050.0)

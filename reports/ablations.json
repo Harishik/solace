@@ -1,0 +1,164 @@
+{
+ "msis00": {
+  "label": "NRLMSISE-00 instead of NRLMSIS 2.1",
+  "n_issues_done": 135,
+  "n_rows_matched": 326410,
+  "n_rows_ablation": 326410,
+  "test_2023plus": {
+   "oracle": {
+    "baseline": 0.12816779346669804,
+    "ablation": 0.12313662677044496,
+    "diff": -0.0050311666962530865,
+    "diff_ci95": [
+     -0.018895497858048213,
+     0.009735070157392289
+    ],
+    "p_ablation_not_worse": 0.7665,
+    "n_reentries": 17336
+   },
+   "msfc": {
+    "baseline": 0.18446636299913183,
+    "ablation": 0.17612858410456672,
+    "diff": -0.008337778894565107,
+    "diff_ci95": [
+     -0.03216518612810866,
+     0.00973083697382001
+    ],
+    "p_ablation_not_worse": 0.8285,
+    "n_reentries": 17336
+   }
+  },
+  "all_years": {
+   "oracle": {
+    "baseline": 0.11602754219459019,
+    "ablation": 0.11716405290612958,
+    "diff": 0.0011365107115393902,
+    "diff_ci95": [
+     -0.009459538537812395,
+     0.009497021348836314
+    ],
+    "p_ablation_not_worse": 0.4435,
+    "n_reentries": 39814
+   },
+   "msfc": {
+    "baseline": 0.17907163834690676,
+    "ablation": 0.17847212085593916,
+    "diff": -0.0005995174909675938,
+    "diff_ci95": [
+     -0.015149571528474142,
+     0.00966336839130457
+    ],
+    "p_ablation_not_worse": 0.5475,
+    "n_reentries": 39814
+   }
+  }
+ },
+ "b14_40": {
+  "label": "drag-fit baseline 14-40 days (default 21-70)",
+  "n_issues_done": 135,
+  "n_rows_matched": 325897,
+  "n_rows_ablation": 327234,
+  "test_2023plus": {
+   "oracle": {
+    "baseline": 0.12814060731042762,
+    "ablation": 0.1349336652171192,
+    "diff": 0.006793057906691574,
+    "diff_ci95": [
+     -0.00045487333916183133,
+     0.01381318999781751
+    ],
+    "p_ablation_not_worse": 0.0375,
+    "n_reentries": 17302
+   },
+   "msfc": {
+    "baseline": 0.18446636299913183,
+    "ablation": 0.1856496578396355,
+    "diff": 0.001183294840503668,
+    "diff_ci95": [
+     -0.012658507596452486,
+     0.010455261485397866
+    ],
+    "p_ablation_not_worse": 0.4775,
+    "n_reentries": 17302
+   }
+  },
+  "all_years": {
+   "oracle": {
+    "baseline": 0.11594042462969775,
+    "ablation": 0.1260477051964215,
+    "diff": 0.010107280566723748,
+    "diff_ci95": [
+     0.004862505953815768,
+     0.01362213451945661
+    ],
+    "p_ablation_not_worse": 0.0,
+    "n_reentries": 39746
+   },
+   "msfc": {
+    "baseline": 0.17897087295791267,
+    "ablation": 0.17965103455744053,
+    "diff": 0.0006801615995278565,
+    "diff_ci95": [
+     -0.0053285786351668155,
+     0.006291659043599665
+    ],
+    "p_ablation_not_worse": 0.384,
+    "n_reentries": 39746
+   }
+  }
+ },
+ "b40_100": {
+  "label": "drag-fit baseline 40-100 days (default 21-70)",
+  "n_issues_done": 135,
+  "n_rows_matched": 323548,
+  "n_rows_ablation": 323811,
+  "test_2023plus": {
+   "oracle": {
+    "baseline": 0.1279986546419277,
+    "ablation": 0.13079365455250688,
+    "diff": 0.002794999910579188,
+    "diff_ci95": [
+     -0.0018654576835517665,
+     0.01008368990246144
+    ],
+    "p_ablation_not_worse": 0.1275,
+    "n_reentries": 17165
+   },
+   "msfc": {
+    "baseline": 0.18443329889127302,
+    "ablation": 0.1899860328539819,
+    "diff": 0.005552733962708889,
+    "diff_ci95": [
+     -0.006247320401845121,
+     0.018988423841180508
+    ],
+    "p_ablation_not_worse": 0.2685,
+    "n_reentries": 17165
+   }
+  },
+  "all_years": {
+   "oracle": {
+    "baseline": 0.11518064764333329,
+    "ablation": 0.11424514161499436,
+    "diff": -0.000935506028338931,
+    "diff_ci95": [
+     -0.0045377624106962295,
+     0.004858728991256399
+    ],
+    "p_ablation_not_worse": 0.6135,
+    "n_reentries": 38518
+   },
+   "msfc": {
+    "baseline": 0.17750016759260706,
+    "ablation": 0.18075471886609912,
+    "diff": 0.0032545512734920568,
+    "diff_ci95": [
+     -0.0030587366348764126,
+     0.011877510162691842
+    ],
+    "p_ablation_not_worse": 0.179,
+    "n_reentries": 38518
+   }
+  }
+ }
+}

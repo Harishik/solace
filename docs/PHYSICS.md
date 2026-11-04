@@ -407,3 +407,33 @@ What this shows:
 
 **Recommended configuration:** the MSFC forecast on the density-corrected atmosphere, with the
 calibrated windows around it. Use the blend if only the point error matters.
+
+## 11. How sure are these numbers?
+
+**Ground truth.** The decay dates come from the Spacebook satellite catalogue. Checked against
+CelesTrak's SATCAT (`scripts/validate_truth.py`): 87 % of the 6,899 cohort decays since June 2016 match
+exactly, 91 % within a day and 99.4 % within a week; only 10 objects are listed as decayed in one
+catalogue and not the other.
+
+**Block bootstrap** (`scripts/significance.py`). Forecasts issued on the same date share the same
+solar error, so we resample issue dates in circular blocks of six (~6 months), 2,000 times. At one year,
+2016–2026:
+
+| | Median error [95 % CI] | Count error per date |
+|---|---|---|
+| Persistence | 22.5 % [18.2, 28.1] | 55.5 [33.5, 82.3] |
+| Analog | 17.5 % [15.2, 20.8] | 36.0 [24.3, 51.6] |
+| MSFC | 17.9 % [15.7, 20.5] | 33.3 [23.1, 45.1] |
+| True weather | 11.6 % [10.6, 13.3] | 17.2 [12.4, 22.8] |
+
+Cycle-aware forecasts beat persistence (MSFC by 4.6 points [1.5, 8.7], P = 0.002); the realistic flux
+forecasts do not differ from each other on the median.
+
+**A score over every forecast** (`scripts/proper_scores.py`). The median error only looks at objects
+that re-entered. The Brier score for "re-enters within H days" covers all of them; whether that
+happened is known for every object once H has passed, so no censoring correction is needed. Each
+forecast becomes a probability through the residuals of earlier, fully resolved forecasts (no
+look-ahead). On the 2023–2026 test years MSFC beats the analog at 90, 180 and 365 days (P = 0.018,
+0.001, 0.006); over 2018–2026 they tie at one year. Skill against climatology at one year after 2023:
+SGP4 0.56, persistence 0.80, analog 0.84, MSFC 0.87, true weather 0.90. The probabilities from the true
+weather are close to perfectly reliable (`assets/reliability.png`).

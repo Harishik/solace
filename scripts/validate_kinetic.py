@@ -58,7 +58,7 @@ def main():
     for (i, g, a, e, hp), ev in zip(sample, events):
         out.append({"norad": cat[i].norad_id, "name": cat[i].name, "perigee_km": hp, "constellation": g,
                     "events": ev, "raw_10km": object_conjunction_rate(grid, a, e, -1, THRESH),
-                    "excl_10km": object_conjunction_rate(grid, a, e, g, THRESH)})
+                    "excl_10km": object_conjunction_rate(grid, a, e, g, THRESH, intra_weight=0.0)})
     summary = {}
     for label, sel in (("starlink", lambda r: r["constellation"] == 0), ("others", lambda r: r["constellation"] < 0)):
         rs = [r for r in out if sel(r)]
