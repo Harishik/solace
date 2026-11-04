@@ -37,6 +37,14 @@ def _bstar(field: str) -> float:
     return sign * float("0." + mant.strip()) * 10 ** int(exp)
 
 
+def _bstar_or(field: str, fallback: float) -> float:
+    """B* from the TLE field; SGP4's own parse if the field is malformed."""
+    try:
+        return _bstar(field)
+    except ValueError:
+        return float(fallback)
+
+
 @dataclass
 class TLETable:
     """Distinct TLEs (one row per object and epoch) for low-perigee debris and rocket bodies."""
@@ -61,13 +69,14 @@ class TLETable:
         return cls(**{k: z[k] for k in cls.__dataclass_fields__})
 
 
-def build_tle_table(files, max_perigee_km: float = 800.0, progress: bool = False) -> TLETable:
+def build_tle_table(files, max_perigee_km: float = 800.0, progress: bool = False,
+                    types: tuple[str, ...] = COHORT_TYPES) -> TLETable:
     """Parse weekly snapshot files. Mean motion is converted to Brouwer mean a with SGP4's own
     initialisation (the Kozai/Brouwer difference is ~0.1 %, i.e. several km of perigee)."""
     from sgp4.api import Satrec
 
     cat = satcat()
-    keep = {i for i, c in cat.items() if (c.get("objectType") or "") in COHORT_TYPES}
+    keep = {i for i, c in cat.items() if (c.get("objectType") or "") in types}
     rb = {i for i in keep if cat[i].get("objectType") == "ROCKET BODY"}
     seen: set[tuple[int, str]] = set()
     rows = []
@@ -92,7 +101,7 @@ def build_tle_table(files, max_perigee_km: float = 800.0, progress: bool = False
             seen.add(key)
             s = Satrec.twoline2rv(l1, l2)
             rows.append((sid, s.jdsatepoch + s.jdsatepochF, s.a * 6378.135, mm, s.ecco, np.degrees(s.inclo),
-                         np.degrees(s.nodeo), np.degrees(s.argpo), _bstar(l1[53:61]), sid in rb))
+                         np.degrees(s.nodeo), np.degrees(s.argpo), _bstar_or(l1[53:61], s.bstar), sid in rb))
         if progress and (n % 50 == 0 or n == len(files) - 1):
             print(f"[{n + 1}/{len(files)}] {len(rows)} TLEs", flush=True)
     r = np.array(rows, dtype=object)
@@ -214,4 +223,31 @@ def sgp4_forecast(s: IssueSet, horizon: float, step: float = 1.0) -> np.ndarray:
         first = np.argmax(bad, axis=1)
         new = hit & ~np.isfinite(out)
         out[new] = chunk[first[new]] - jd_issue
+    return out
+
+
+MANOEUVRE_DA_KM = 0.1  # 99.99 % of week-to-week rises in debris/rocket-body mean a are < 0.058 km
+
+
+def manoeuvre_epochs(tt: TLETable, threshold_km: float = MANOEUVRE_DA_KM, max_gap_days: float = 10.0) -> dict:
+    """Epochs (JD) at which an object's mean semi-major axis rose by more than `threshold_km` since
+    its previous TLE. Drag only lowers a, and for debris and rocket bodies (which cannot manoeuvre)
+    such rises are TLE noise beyond the 99.99th percentile, so for a payload they mark a manoeuvre."""
+    same = (tt.norad[1:] == tt.norad[:-1]) & (np.diff(tt.jd) < max_gap_days)
+    jump = same & (np.diff(tt.a) > threshold_km)
+    out: dict[int, list[float]] = {}
+    for k in np.nonzero(jump)[0]:
+        out.setdefault(int(tt.norad[k + 1]), []).append(float(tt.jd[k + 1]))
+    return {i: np.array(v) for i, v in out.items()}
+
+
+def manoeuvred_between(epochs: dict, norad: np.ndarray, jd_from, jd_to) -> np.ndarray:
+    """True where the object has a manoeuvre epoch in (jd_from, jd_to] (scalars or arrays)."""
+    jd_from = np.broadcast_to(jd_from, norad.shape)
+    jd_to = np.broadcast_to(jd_to, norad.shape)
+    out = np.zeros(len(norad), bool)
+    for k, i in enumerate(norad):
+        e = epochs.get(int(i))
+        if e is not None:
+            out[k] = bool(np.any((e > jd_from[k]) & (e <= jd_to[k])))
     return out

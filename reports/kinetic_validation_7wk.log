@@ -1,0 +1,19 @@
+/Users/harishikjamwal/Nasa SAR Orbit Tracker/data/history/sb_2026-09-14.tle: 2473 approaches so far
+/Users/harishikjamwal/Nasa SAR Orbit Tracker/data/history/sb_2026-09-21.tle: 5190 approaches so far
+/Users/harishikjamwal/Nasa SAR Orbit Tracker/data/history/sb_2026-09-28.tle: 7355 approaches so far
+/Users/harishikjamwal/Nasa SAR Orbit Tracker/data/history/sb_2026-10-05.tle: 9775 approaches so far
+/Users/harishikjamwal/Nasa SAR Orbit Tracker/data/history/sb_2026-10-12.tle: 12327 approaches so far
+/Users/harishikjamwal/Nasa SAR Orbit Tracker/data/history/sb_2026-10-19.tle: 14316 approaches so far
+/Users/harishikjamwal/Nasa SAR Orbit Tracker/data/history/sb_2026-10-26.tle: 16949 approaches so far
+starlink <   1 km  actual    36 (29 same-constellation)  kinetic raw    239.0 (x6.64)  excluding own     19.3 (x0.54)
+starlink <   2 km  actual   154 (106 same-constellation)  kinetic raw    956.0 (x6.21)  excluding own     77.4 (x0.50)
+starlink <   5 km  actual  2376 (2042 same-constellation)  kinetic raw   5974.9 (x2.51)  excluding own    483.7 (x0.20)
+starlink <  10 km  actual 12428 (10977 same-constellation)  kinetic raw  23899.5 (x1.92)  excluding own   1934.7 (x0.16)
+oneweb   <   1 km  actual     2 (0 same-constellation)  kinetic raw      6.2 (x3.09)  excluding own      2.8 (x1.41)
+oneweb   <   2 km  actual    18 (2 same-constellation)  kinetic raw     24.7 (x1.37)  excluding own     11.2 (x0.62)
+oneweb   <   5 km  actual   131 (60 same-constellation)  kinetic raw    154.5 (x1.18)  excluding own     70.3 (x0.54)
+oneweb   <  10 km  actual   583 (267 same-constellation)  kinetic raw    617.9 (x1.06)  excluding own    281.2 (x0.48)
+others   <   1 km  actual    44 (0 same-constellation)  kinetic raw     37.4 (x0.85)  excluding own     37.4 (x0.85)
+others   <   2 km  actual   148 (0 same-constellation)  kinetic raw    149.6 (x1.01)  excluding own    149.6 (x1.01)
+others   <   5 km  actual   948 (0 same-constellation)  kinetic raw    935.1 (x0.99)  excluding own    935.1 (x0.99)
+others   <  10 km  actual  3938 (0 same-constellation)  kinetic raw   3740.2 (x0.95)  excluding own   3740.2 (x0.95)

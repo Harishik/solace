@@ -1,0 +1,26 @@
+d=1.2 v=7.0 dx=0.05 strength=True {'eos': 'tillotson', 'artificial_stress': 0.3, 'fracture': True, 'spall_stress_gpa': 2.0}: perforated=False failed(BLE def)=True through=0 spall=67 crack=False deflection=1.03 mm (1348s)
+d=1.5 v=7.0 dx=0.05 strength=True {'eos': 'tillotson', 'artificial_stress': 0.3, 'fracture': True, 'spall_stress_gpa': 2.0}: perforated=True failed(BLE def)=True through=13 spall=255 crack=False deflection=1.66 mm (1430s)
+d=1.8 v=7.0 dx=0.05 strength=True {'eos': 'tillotson', 'artificial_stress': 0.3, 'fracture': True, 'spall_stress_gpa': 2.0}: perforated=True failed(BLE def)=True through=52 spall=537 crack=True deflection=2.64 mm (1499s)
+{
+ "ble_critical_diameter_mm": 1.9485267613366006,
+ "speed_kms": 7.0,
+ "resolution_mm": 0.05,
+ "options": {
+  "eos": "tillotson",
+  "artificial_stress": 0.3,
+  "fracture": true,
+  "spall_stress_gpa": 2.0
+ },
+ "threshold_ble_criterion_mm": [
+  null,
+  1.2
+ ],
+ "threshold_strength_mm": [
+  1.2,
+  1.5
+ ],
+ "threshold_hydro_mm": [
+  null,
+  null
+ ]
+}

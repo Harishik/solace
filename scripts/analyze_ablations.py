@@ -22,7 +22,8 @@ import numpy as np
 OUT = Path("reports/ablations.json")
 TAGS = {"msis00": "NRLMSISE-00 instead of NRLMSIS 2.1",
         "b14_40": "drag-fit baseline 14-40 days (default 21-70)",
-        "b40_100": "drag-fit baseline 40-100 days (default 21-70)"}
+        "b40_100": "drag-fit baseline 40-100 days (default 21-70)",
+        "geom": "density at each node's latitude and local time (default: their mean)"}
 
 
 def _sig():

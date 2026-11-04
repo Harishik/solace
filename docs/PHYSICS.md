@@ -437,3 +437,22 @@ look-ahead). On the 2023–2026 test years MSFC beats the analog at 90, 180 and 
 0.001, 0.006); over 2018–2026 they tie at one year. Skill against climatology at one year after 2023:
 SGP4 0.56, persistence 0.80, analog 0.84, MSFC 0.87, true weather 0.90. The probabilities from the true
 weather are close to perfectly reliable (`assets/reliability.png`).
+
+## 12. Payloads and manoeuvre detection
+
+Satellites were left out of the cohort because thrust breaks the drag model. To include them
+(`scripts/run_payloads.py`) we need to know, at the issue date, which ones are still being flown.
+Drag can only lower the mean semi-major axis, so a rise between two TLEs means thrust. For debris and
+rocket bodies the 99.99th percentile of rises between TLEs at most 10 days apart is 0.058 km (TLE noise),
+so we flag a manoeuvre when the mean semi-major axis rises by more than 0.1 km
+(`solace.risk.reentry.manoeuvre_epochs`) and screen out a payload if it manoeuvred in the 120 days before
+the issue date. A long lookback is needed because station-kept satellites often coast for weeks between
+burns.
+
+Over 135 issue dates this keeps 314,629 forecasts of 13,807 payloads and screens out about 2,000 per date
+(over 7,000 by mid-2026, mostly Starlink). The payloads that kept coasting are forecast as well as debris:
+median 1-year error 17.9 % with MSFC and 12.2 % with the true weather (debris 17.9 % and 11.6 %).
+6.6 % of payload re-entries within a year came after a later manoeuvre, and for 79 % of those the forecast
+was no re-entry at all: they were deliberately de-orbited. Payload windows cover 70 % instead of 80 %:
+payload re-entries are fewer and more bunched in time than debris, so the online calibration has less
+to learn from. Details in `reports/payloads.json` and paper Section 4.7.

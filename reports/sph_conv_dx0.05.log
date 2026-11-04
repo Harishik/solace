@@ -1,0 +1,19 @@
+d=0.9 v=7.0 dx=0.05 strength=True {}: perforated=False deflection=1.26 mm (541s)
+d=1.5 v=7.0 dx=0.05 strength=True {}: perforated=True deflection=5.72 mm (686s)
+d=1.2 v=7.0 dx=0.05 strength=True {}: perforated=True deflection=8.41 mm (821s)
+d=1.8 v=7.0 dx=0.05 strength=True {}: perforated=True deflection=6.33 mm (989s)
+d=2.1 v=7.0 dx=0.05 strength=True {}: perforated=True deflection=6.73 mm (1145s)
+{
+ "ble_critical_diameter_mm": 1.9485267613366006,
+ "speed_kms": 7.0,
+ "resolution_mm": 0.05,
+ "options": {},
+ "threshold_strength_mm": [
+  0.9,
+  1.2
+ ],
+ "threshold_hydro_mm": [
+  null,
+  null
+ ]
+}

@@ -4,8 +4,11 @@ The catalog only contains objects larger than ~10 cm, but shields fail to millim
 The flux of smaller debris is extrapolated with a two-segment cumulative power law
 N(>d) ~ d^-s anchored at the catalog size: a shallow segment from 10 cm down to 1 cm and a steeper
 one below 1 cm, the broad shape ORDEM and MASTER show in LEO. The slopes are the dominant
-uncertainty, so they are parameters, to be calibrated against returned-surface impact counts
-(Hubble solar arrays, ISS) rather than trusted as defaults.
+uncertainty. ORDEM 3.1 publishes its size distributions only as figures (Matney et al. 2019), so a
+calibration needs ORDEM or MASTER output; until then every report carries the range spanned by
+SLOPE_RANGES: fragment generation in the NASA Standard Breakup Model has N(>L) ~ L^-1.6 to L^-1.71
+(Johnson et al. 2001), drag removes small debris faster (flatter), and in-situ data at mm sizes
+are steeper.
 
 Only debris and rocket bodies feed the flux: active payloads are few, tracked and manoeuvre around
 each other, whereas fragments and spent stages are the population that impacts unannounced.
@@ -33,6 +36,8 @@ class RiskReport:
     small_debris_multiplier: float
     expected_penetrations: float
     p_penetration: float
+    p_penetration_low: float = float("nan")  # over SLOPE_RANGES
+    p_penetration_high: float = float("nan")
 
     def as_dict(self) -> dict:
         return self.__dict__.copy()
@@ -44,6 +49,9 @@ def size_multiplier(d_cm: float, catalog_cm: float = 10.0, break_cm: float = 1.0
     if d_cm >= break_cm:
         return (d_cm / catalog_cm) ** (-slope_large)
     return (break_cm / catalog_cm) ** (-slope_large) * (d_cm / break_cm) ** (-slope_small)
+
+
+SLOPE_RANGES = {"slope_large": (1.0, 1.71), "slope_small": (1.6, 2.6)}
 
 
 def asset_risk(asset: TLE, grid: ShellGrid, days: float = 30.0, area_m2: float = 10.0,
@@ -58,8 +66,13 @@ def asset_risk(asset: TLE, grid: ShellGrid, days: float = 30.0, area_m2: float =
     flux = float((w * n).sum()) * v_rel_kms  # objects / km^2 / s
     d_crit = float(shield.critical_diameter(v_rel_kms, impact_angle_deg))
     mult = size_multiplier(d_crit, **size_kw)
-    expected = flux * 1e-6 * area_m2 * days * 86400 * mult
+    base = flux * 1e-6 * area_m2 * days * 86400
+    expected = base * mult
+    corners = [size_multiplier(d_crit, slope_large=sl, slope_small=ss)
+               for sl in SLOPE_RANGES["slope_large"] for ss in SLOPE_RANGES["slope_small"]]
     return RiskReport(asset=asset.name, days=days, area_m2=area_m2,
                       flux_catalog_per_m2_yr=flux * 1e-6 * 3.156e7, d_crit_cm=d_crit,
                       small_debris_multiplier=mult, expected_penetrations=expected,
-                      p_penetration=float(1 - np.exp(-expected)))
+                      p_penetration=float(1 - np.exp(-expected)),
+                      p_penetration_low=float(1 - np.exp(-base * min(corners))),
+                      p_penetration_high=float(1 - np.exp(-base * max(corners))))
