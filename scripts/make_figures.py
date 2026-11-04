@@ -305,8 +305,61 @@ def solar_forecasts(issues=(date(2019, 3, 4), date(2021, 6, 7), date(2023, 6, 5)
     _save(fig, "solar_forecasts.png")
 
 
+def density_bias():
+    """NRLMSIS 2.1 bias against solar flux, five satellites, with the fitted correction."""
+    from solace.risk import density_bias as B
+
+    db = B.load_daily()
+    m = B.fit(db, date(2026, 10, 1), latency_days=0)
+    fig, ax = plt.subplots(figsize=(8, 3.8))
+    cols = ["#2563eb", "#7c3aed", "#059669", "#f59e0b", "#dc2626"]
+    names = {"gracefo1": "GRACE-FO 1", "swarmC": "Swarm C", "swarmB": "Swarm B", "champ": "CHAMP", "grace1": "GRACE 1"}
+    for k, sat in enumerate(B.SATS):
+        sel = db.sat == k
+        ax.scatter(db.f107a[sel], db.delta[sel], s=3, alpha=0.25, color=cols[k], label=names[sat], rasterized=True)
+    f = np.linspace(66, 230, 200)
+    fit = m(f, np.full(len(f), 7.0), np.array([450.0]))[:, 0]
+    ax.plot(f, fit, color=INK, lw=2.4, label="Fitted correction, 450 km")
+    ax.axhline(0, color=MUTED, lw=0.8)
+    ax.set_xlabel("81-day mean F10.7 (sfu)")
+    ax.set_ylabel("ln(observed / NRLMSIS 2.1)")
+    ax.set_ylim(-1.2, 0.6)
+    ax.set_title("NRLMSIS 2.1 overestimates density at solar minimum")
+    ax.legend(loc="lower right", ncol=3, fontsize=9, markerscale=4)
+    _save(fig, "density_bias.png")
+
+
+def reliability():
+    """Reliability of P(re-entry within 1 year), 2023+ test years."""
+    import sys
+
+    sys.path.insert(0, str(Path(__file__).parent))
+    from significance import load
+
+    from solace.risk.conformal import event_probability
+
+    r = load()
+    day = np.array([date.fromisoformat(x).toordinal() for x in r["issue"]])
+    y = r["actual"] <= 365
+    fig, ax = plt.subplots(figsize=(4.6, 4.2))
+    edges = np.array([0, 0.02, 0.05, 0.1, 0.2, 0.35, 0.5, 0.65, 0.8, 0.9, 0.95, 0.98, 1.0001])
+    for k, lab in (("analog", "Solar-cycle analog"), ("msfc", "NASA MSFC"), ("oracle", "True weather")):
+        p = event_probability(day, r["actual"], r[k], r["hp"], 365)
+        ok = np.isfinite(p) & (r["known_until"] >= 365) & (r["issue"] >= "2023")
+        idx = np.digitize(p[ok], edges) - 1
+        xs = [p[ok][idx == b].mean() for b in range(len(edges) - 1) if (idx == b).sum() > 50]
+        ys = [y[ok][idx == b].mean() for b in range(len(edges) - 1) if (idx == b).sum() > 50]
+        ax.plot(xs, ys, "o-", color=C[k], lw=1.8, ms=4, label=lab)
+    ax.plot([0, 1], [0, 1], color=MUTED, ls="--", lw=1)
+    ax.set_xlabel("Forecast probability of re-entry within 1 year")
+    ax.set_ylabel("Observed frequency")
+    ax.set_title("Reliability, 2023-2026")
+    ax.legend(loc="upper left", fontsize=9)
+    _save(fig, "reliability.png")
+
+
 ALL = {"headline": headline, "by_year": by_year, "coverage": coverage, "lunisolar": lunisolar,
-       "solar_forecasts": solar_forecasts,
+       "solar_forecasts": solar_forecasts, "density_bias": density_bias, "reliability": reliability,
        "solar_gif": solar_gif, "gto_gif": gto_gif, "sph_gif": sph_gif}
 
 if __name__ == "__main__":

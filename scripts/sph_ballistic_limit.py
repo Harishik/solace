@@ -10,12 +10,16 @@ for a sphere, ~1.18x), and, more importantly, its debris cloud spreads in two di
 load reaching the rear wall falls off as ~1/r rather than ~1/r^2. Planar runs therefore fail at
 smaller diameters than the (3-D, spherical) BLE; the sweep measures what strength changes.
 
-Run from the repo root:  .venv/bin/python scripts/sph_ballistic_limit.py
-Writes reports/sph_ballistic_limit.json.
+With --axisymmetric the solver works in (r, z): the projectile is a real sphere and the cloud
+spreads in three dimensions, which is the like-for-like comparison with the BLE.
+
+Run from the repo root:  .venv/bin/python scripts/sph_ballistic_limit.py [--axisymmetric]
+Writes reports/sph_ballistic_limit[_axisymmetric].json.
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import time
 from concurrent.futures import ProcessPoolExecutor
@@ -24,13 +28,13 @@ from pathlib import Path
 from solace.impact import WhippleImpact, WhippleShield, damage_metrics
 
 DIAMETERS = (0.6, 0.9, 1.2, 1.5, 1.8, 2.1, 2.5, 3.0)
-OUT = Path("reports/sph_ballistic_limit.json")
 
 
 def run(args):
-    d, strength = args
+    d, strength, axi = args
     t = time.time()
-    sc = WhippleImpact(projectile_diameter=d, resolution=0.15, width=24.0, strength=strength)
+    sc = WhippleImpact(projectile_diameter=d, resolution=0.1 if axi else 0.15, width=24.0, strength=strength,
+                       axisymmetric=axi)
     sol = sc.build()
     pos0 = sol.state.pos0.copy()
     snap = sol.run(2.0 * sc.time_to_rear_wall())[-1]
@@ -42,7 +46,11 @@ def run(args):
 
 
 def main():
-    jobs = [(d, s) for s in (True, False) for d in DIAMETERS]
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--axisymmetric", action="store_true")
+    a = ap.parse_args()
+    out_path = Path(f"reports/sph_ballistic_limit{'_axisymmetric' if a.axisymmetric else ''}.json")
+    jobs = [(d, s, a.axisymmetric) for s in (True, False) for d in DIAMETERS]
     with ProcessPoolExecutor(4) as ex:
         rows = list(ex.map(run, jobs))
     ble = float(WhippleShield(bumper_cm=0.05, rear_wall_cm=0.15, standoff_cm=1.5).critical_diameter(7.0) * 10)
@@ -52,7 +60,7 @@ def main():
         held = [r["diameter_mm"] for r in rows if r["strength"] == s and not r["rear_wall_perforated"]]
         out[f"threshold_{'strength' if s else 'hydro'}_mm"] = [max([x for x in held if x < min(failed, default=9)],
                                                                     default=None), min(failed, default=None)]
-    OUT.write_text(json.dumps(out, indent=1, default=float))
+    out_path.write_text(json.dumps(out, indent=1, default=float))
     print(json.dumps({k: v for k, v in out.items() if k != "runs"}, indent=1))
 
 

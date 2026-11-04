@@ -254,13 +254,26 @@ class WhippleImpact:
     width: float = 30.0
     resolution: float = 0.1  # particle spacing
     strength: bool = True
+    axisymmetric: bool = False  # True: a real sphere on round plates (r, z); False: planar cylinder
 
     def build(self) -> SPHSolver:
         dx = self.resolution
         rp = self.projectile_diameter / 2
+        y_rear = -self.bumper_thickness - self.standoff
+        if self.axisymmetric:
+            g = np.arange(dx / 2, rp, dx)
+            R, Z = np.meshgrid(g, np.arange(-rp, rp + dx / 2, dx))
+            keep = R**2 + Z**2 <= rp**2
+            proj = np.column_stack([R[keep], Z[keep] + rp + dx])
+            bumper = lattice_box(0.0, self.width / 2, -self.bumper_thickness, 0.0, dx)
+            rear = lattice_box(0.0, self.width, y_rear - self.rear_wall_thickness, y_rear, dx)
+            return AxisymmetricSPHSolver([
+                Body("projectile", proj, np.array([0.0, -self.speed])),
+                Body("bumper", bumper, np.zeros(2)),
+                Body("rear_wall", rear, np.zeros(2)),
+            ], dx, strength=self.strength)
         proj = lattice_disk((0.0, rp + dx), rp, dx)
         bumper = lattice_box(-self.width / 2, self.width / 2, -self.bumper_thickness, 0.0, dx)
-        y_rear = -self.bumper_thickness - self.standoff
         rear = lattice_box(-self.width, self.width, y_rear - self.rear_wall_thickness, y_rear, dx)
         return SPHSolver([
             Body("projectile", proj, np.array([0.0, -self.speed])),
@@ -310,3 +323,112 @@ def damage_metrics(sc: WhippleImpact, snap: dict, pos0: np.ndarray) -> dict:
         # High percentile, not max: single-particle spikes at contact interfaces are numerical.
         "p99_pressure_GPa": float(np.percentile(snap["p"], 99.5) * 1e3),
     }
+
+
+class AxisymmetricSPHSolver(SPHSolver):
+    """Axisymmetric (r, z) SPH: x is the radius r >= 0, y is the axis z. Each particle is a ring.
+
+    With ring masses m and the 2-D kernel, the summed quantity is eta = 2 pi r rho. Varying the
+    Lagrangian sum m (v^2/2 - u(rho)) with rho = eta / (2 pi r) gives the pair force
+    sum_j m_j (sigma_i / (rho_i eta_i) + sigma_j / (rho_j eta_j)) . grad_i W_ij plus a hoop term
+    -sigma_thetatheta / (rho r) along r; energy and the deviatoric stress (rr, zz, thetatheta, rz)
+    pick up the hoop strain rate v_r / r. Particles within 2h of the axis are mirrored across it.
+    A projectile disk in (r, z) is a sphere; a slab is a plate.
+    """
+
+    def __init__(self, bodies: list[Body], dx: float, material: Material = ALUMINIUM, **kw):
+        bodies = [Body(b.name, b.pos[b.pos[:, 0] > 0], b.vel) for b in bodies]  # keep r > 0 only
+        super().__init__(bodies, dx, material, **kw)
+        s = self.state
+        s.mass = 2 * np.pi * s.pos[:, 0] * material.rho0 * dx * dx  # ring masses
+        self.eta = 2 * np.pi * s.pos[:, 0] * s.rho
+
+    def _rates(self, s: SPHState):
+        h, n = s.h, len(s.pos)
+        r_axis = np.maximum(s.pos[:, 0], 0.25 * h)
+        rho = self.eta / (2 * np.pi * r_axis)
+        s.rho = rho
+        ghost = np.nonzero(s.pos[:, 0] < 2 * h)[0]
+        pos = np.vstack([s.pos, s.pos[ghost] * [-1, 1]])
+        vel = np.vstack([s.vel, s.vel[ghost] * [-1, 1]])
+        src = np.concatenate([np.arange(n), ghost])  # real particle each entry stands for
+        S = np.vstack([s.sdev, s.sdev[ghost] * [1, 1, 1, -1]])
+        pairs = cKDTree(pos).query_pairs(2.0 * h, output_type="ndarray")
+        pairs = pairs[(pairs[:, 0] < n) | (pairs[:, 1] < n)]
+        i, j = pairs[:, 0], pairs[:, 1]
+        si, sj = src[i], src[j]
+        dx = pos[i] - pos[j]
+        r = np.linalg.norm(dx, axis=1)
+        gw = kernel_grad(dx, r, h)
+        dv = vel[i] - vel[j]
+        p = mie_gruneisen(rho, s.e, self.m)
+        c = sound_speed(rho, s.e, p, self.m)
+        eta, m = self.eta, s.mass
+        vr = np.einsum("ij,ij->i", dv, dx)
+        mu = np.where(vr < 0, h * vr / (r * r + 0.01 * h * h), 0.0)
+        ebar = 0.5 * (eta[si] + eta[sj])
+        pi_ij = (-self.alpha * 0.5 * (c[si] + c[sj]) * mu + self.beta * mu * mu) / ebar  # = Pi_planar * rho/eta
+        q = p / (rho * eta)
+        term = q[si] + q[sj] + pi_ij
+        nt = len(pos)
+        mi, mj = m[si], m[sj]
+        dvgw = np.einsum("ij,ij->i", dv, gw)
+        real_i, real_j = i < n, j < n
+        deta = (np.bincount(i, mj * dvgw * real_i, nt) + np.bincount(j, mi * dvgw * real_j, nt))[:n]
+        acc = np.zeros((nt, 2))
+        for k in range(2):
+            acc[:, k] = -np.bincount(i, mj * term * gw[:, k], nt) + np.bincount(j, mi * term * gw[:, k], nt)
+        de = 0.5 * (np.bincount(i, mj * term * dvgw, nt) + np.bincount(j, mi * term * dvgw, nt))
+        acc, de = acc[:n], de[:n]
+        ur = s.vel[:, 0] / r_axis  # hoop strain rate
+        acc[:, 0] += p / (rho * r_axis)  # hoop term, pressure part: -sigma_tt/(rho r) with sigma_tt = -p
+        de -= p * ur / rho
+        ds = np.zeros((n, 4))
+        if self.strength:
+            sw = S / (np.concatenate([rho, rho[ghost]]) * np.concatenate([eta, eta[ghost]]))[:, None]
+            fx = (sw[i, 0] + sw[j, 0]) * gw[:, 0] + (sw[i, 3] + sw[j, 3]) * gw[:, 1]
+            fy = (sw[i, 3] + sw[j, 3]) * gw[:, 0] + (sw[i, 1] + sw[j, 1]) * gw[:, 1]
+            acc[:, 0] += (np.bincount(i, mj * fx, nt) - np.bincount(j, mi * fx, nt))[:n]
+            acc[:, 1] += (np.bincount(i, mj * fy, nt) - np.bincount(j, mi * fy, nt))[:n]
+            acc[:, 0] -= s.sdev[:, 2] / (rho * r_axis)  # hoop term, deviatoric part
+            L = np.zeros((n, 2, 2))
+            wi, wj = mj / eta[sj], mi / eta[si]
+            for a in range(2):
+                for b in range(2):
+                    g = dv[:, a] * gw[:, b]
+                    L[:, a, b] = (-np.bincount(i, wi * g * real_i, nt) - np.bincount(j, wj * g * real_j, nt))[:n]
+            drr, dzz, drz = L[:, 0, 0], L[:, 1, 1], 0.5 * (L[:, 0, 1] + L[:, 1, 0])
+            w = 0.5 * (L[:, 0, 1] - L[:, 1, 0])
+            tr3 = (drr + dzz + ur) / 3.0
+            g2 = 2.0 * self.m.shear_modulus * self._soft(s.e)
+            Sd = s.sdev
+            ds[:, 0] = g2 * (drr - tr3) + 2.0 * w * Sd[:, 3]
+            ds[:, 1] = g2 * (dzz - tr3) - 2.0 * w * Sd[:, 3]
+            ds[:, 2] = g2 * (ur - tr3)
+            ds[:, 3] = g2 * drz + w * (Sd[:, 1] - Sd[:, 0])
+            de += (Sd[:, 0] * drr + Sd[:, 1] * dzz + Sd[:, 2] * ur + 2.0 * Sd[:, 3] * drz) / rho
+        vmax = np.max(c + np.linalg.norm(s.vel, axis=1))
+        return deta, acc, de, vmax, p, ds
+
+    def step(self) -> float:
+        s = self.state
+        deta, acc, de, vmax, _, ds = self._cached if self._cached else self._rates(s)
+        dt = self.cfl * s.h / vmax
+        s.vel += 0.5 * dt * acc
+        self.eta += 0.5 * dt * deta
+        s.e += 0.5 * dt * de
+        s.sdev += 0.5 * dt * ds
+        s.pos += dt * s.vel
+        s.pos[:, 0] = np.abs(s.pos[:, 0])  # a ring cannot cross the axis
+        self._cached = rates = self._rates(s)
+        deta, acc, de, _, _, ds = rates
+        s.vel += 0.5 * dt * acc
+        self.eta += 0.5 * dt * deta
+        s.e = np.maximum(s.e + 0.5 * dt * de, 0.0)
+        s.sdev += 0.5 * dt * ds
+        if self.strength:
+            self._yield(s)
+        floor = 0.05 * self.m.rho0 * 2 * np.pi * np.maximum(s.pos[:, 0], 0.25 * s.h)
+        self.eta = np.maximum(self.eta, floor)
+        s.t += dt
+        return dt

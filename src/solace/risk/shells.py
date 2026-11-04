@@ -19,9 +19,13 @@ from ..orbit.propagate import MU, R_EARTH, Propagator, jday_array
 ALT_EDGES = np.arange(200.0, 2050.0, 50.0)  # km, 37 bands
 INC_EDGES = np.array([0, 30, 45, 55, 65, 75, 85, 95, 105, 180.0])  # deg; dense near SSO/polar
 KINDS = ("payload", "rocket_body", "debris")
-# Station-kept constellations: members are phased within their own shells, so they do not meet each
-# other at random and must not count as each other's kinetic-gas targets.
+# Station-kept constellations: members are phased within their own shells, so at collision-relevant
+# distances they meet each other far less often than random motion predicts.
 CONSTELLATIONS = ("STARLINK", "ONEWEB", "KUIPER", "QIANFAN", "GUOWANG", "IRIDIUM", "ORBCOMM", "GLOBALSTAR")
+# Measured weight of same-constellation pairs in the kinetic-gas rate (scripts/validate_kinetic.py:
+# 40 Starlink satellites screened for one day, approaches < 1-2 km): 0.05-0.12 of the random rate.
+# Pairs with every other object follow kinetic gas theory to within 0.7-1.4x at 1-10 km.
+INTRA_WEIGHT = 0.08
 
 
 def constellation_index(name: str) -> int:
@@ -122,32 +126,33 @@ def build_grid(tles: list[TLE], when: datetime | None = None, n_samples: int = 2
 
 
 def kinetic_conjunction_rate(grid: ShellGrid, threshold_km: float = 1.0, v_rel_kms: float = 10.0,
-                             coordinated: bool = False) -> np.ndarray:
+                             intra_weight: float = 1.0) -> np.ndarray:
     """Expected close approaches (< threshold) per day in each cell from kinetic gas theory:
     rate = 1/2 * N * n * sigma * v_rel, with sigma = pi * threshold^2.
 
     Inclination cells share the altitude band's volume, so cross-inclination encounters (which
-    dominate LEO conjunctions) are counted through the band density. With `coordinated` (and a grid
-    that records constellation membership), pairs inside the same station-kept constellation are
-    removed: rate = 1/2 sigma v (N n - sum_g N_g n_g).
+    dominate LEO conjunctions) are counted through the band density. Pairs inside one station-kept
+    constellation count with `intra_weight` (1 = random motion, the default for reproducibility of
+    the Phase 3 features; INTRA_WEIGHT is the measured value): rate = 1/2 sigma v (N n - (1 - w)
+    sum_g N_g n_g).
     """
     vol = band_volume()[:, None]
     n_band = grid.spatial_density().sum(axis=1, keepdims=True)  # objects / km^3 in the band
     pairs = grid.total * n_band
-    if coordinated and grid.groups is not None:
+    if intra_weight != 1.0 and grid.groups is not None:
         n_g = grid.groups.sum(axis=1, keepdims=True) / vol[..., None]
-        pairs = pairs - (grid.groups * n_g).sum(axis=-1)
+        pairs = pairs - (1.0 - intra_weight) * (grid.groups * n_g).sum(axis=-1)
     per_s = 0.5 * np.maximum(pairs, 0.0) * np.pi * threshold_km**2 * v_rel_kms
     return per_s * 86400.0
 
 
 def object_conjunction_rate(grid: ShellGrid, a: float, e: float, group: int = -1, threshold_km: float = 1.0,
-                            v_rel_kms: float = 10.0) -> float:
+                            v_rel_kms: float = 10.0, intra_weight: float = INTRA_WEIGHT) -> float:
     """Expected close approaches per day for one object on orbit (a, e), kinetic gas theory. A
-    constellation member (`group` >= 0) does not count its own constellation as targets."""
+    constellation member (`group` >= 0) counts its own constellation with `intra_weight`."""
     n = grid.total.sum(axis=1)
     if group >= 0 and grid.groups is not None:
-        n = n - grid.groups[..., group].sum(axis=1)
+        n = n - (1.0 - intra_weight) * grid.groups[..., group].sum(axis=1)
     w = residence_weights(a, e)
     return float((w * n / band_volume()).sum() * np.pi * threshold_km**2 * v_rel_kms * 86400.0)
 

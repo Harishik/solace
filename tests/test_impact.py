@@ -73,3 +73,22 @@ def test_sph_strength_sits_on_yield_surface_in_uniaxial_strain():
                     strength=False)
     hyd.run(0.02)
     assert not hyd.state.sdev.any()
+
+
+def test_axisymmetric_plate_impact_matches_hugoniot_on_and_off_axis():
+    from solace.impact.sph import AxisymmetricSPHSolver
+
+    # Same set-up as the planar test, as round plates: the shocked state must not depend on radius.
+    dx, u = 0.05, 3.0
+    target = lattice_box(0, 3, 0, 1.5, dx)
+    flyer = lattice_box(0, 3, 1.5, 3.0, dx)
+    sol = AxisymmetricSPHSolver([Body("t", target, np.zeros(2)), Body("f", flyer, np.array([0.0, -u]))], dx)
+    sol.run(0.08)
+    s, p = sol.state, sol.snapshot()["p"]
+    up = u / 2
+    expected = 2.70e-3 * (5.35 + 1.34 * up) * up
+    for lo, hi in ((0.0, 0.3), (0.5, 1.5)):  # next to the axis and away from it
+        m = (s.pos[:, 0] >= lo) & (s.pos[:, 0] < hi) & (np.abs(s.pos[:, 1] - 1.5) < 0.2)
+        assert np.median(p[m]) == pytest.approx(expected, rel=0.08)
+        assert np.median(s.vel[m, 1]) == pytest.approx(-up, rel=0.05)
+    assert (s.pos[:, 0] >= 0).all()
