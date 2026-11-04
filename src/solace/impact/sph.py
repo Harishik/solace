@@ -311,15 +311,24 @@ def damage_metrics(sc: WhippleImpact, snap: dict, pos0: np.ndarray) -> dict:
 
     rm = body == 2
     y_back = -sc.bumper_thickness - sc.standoff - sc.rear_wall_thickness
-    deflection = float(np.max(pos0[rm, 1] - pos[rm, 1]))
-    through = (body != 2) & (pos[:, 1] < y_back - dx)
+    ok = ~snap.get("eroded", np.zeros(len(pos), bool))
+    disp = pos0[rm, 1] - pos[rm, 1]
+    deflection = float(np.max(disp[ok[rm]]))
+    # Like material through the wall, a deflection needs more than 3 particles to count: a single
+    # spalled particle is not a failed wall.
+    bulged = int(np.sum(disp[ok[rm]] > sc.rear_wall_thickness))
+    through = (body != 2) & (pos[:, 1] < y_back - dx) & ok
     return {
         "time_us": snap["t"],
         "bumper_hole_mm": hole,
         "hole_to_projectile": hole / sc.projectile_diameter,
         "cloud_half_angle_deg": half_angle,
         "rear_wall_max_displacement_mm": deflection,
-        "rear_wall_perforated": bool(through.sum() > 3 or deflection > sc.rear_wall_thickness),
+        "rear_wall_particles_beyond_thickness": bulged,
+        "material_through_wall": int(through.sum()),
+        "eroded_particles": int((~ok).sum()),
+        "rear_wall_perforated_single_particle": bool(through.sum() > 3 or deflection > sc.rear_wall_thickness),
+        "rear_wall_perforated": bool(through.sum() > 3 or bulged > 3),
         # High percentile, not max: single-particle spikes at contact interfaces are numerical.
         "p99_pressure_GPa": float(np.percentile(snap["p"], 99.5) * 1e3),
     }
@@ -336,12 +345,24 @@ class AxisymmetricSPHSolver(SPHSolver):
     A projectile disk in (r, z) is a sphere; a slab is a plate.
     """
 
+    FLOOR = 0.05  # density floor, fraction of solid density
+
+    def snapshot(self) -> dict:
+        snap = super().snapshot()
+        snap["eroded"] = self.eroded.copy()
+        return snap
+
     def __init__(self, bodies: list[Body], dx: float, material: Material = ALUMINIUM, **kw):
         bodies = [Body(b.name, b.pos[b.pos[:, 0] > 0], b.vel) for b in bodies]  # keep r > 0 only
         super().__init__(bodies, dx, material, **kw)
         s = self.state
         s.mass = 2 * np.pi * s.pos[:, 0] * material.rho0 * dx * dx  # ring masses
         self.eta = 2 * np.pi * s.pos[:, 0] * s.rho
+        # Erosion limits: nothing can move at twice the impact speed or hold twice the impact's
+        # specific kinetic energy (units mm/us, so v^2 is MJ/kg); such rings are numerical debris.
+        v0 = float(np.max(np.linalg.norm(s.vel, axis=1)))
+        self.v_erode, self.e_erode = 2.0 * v0, v0 * v0
+        self.eroded = np.zeros(len(s.pos), bool)
 
     def _rates(self, s: SPHState):
         h, n = s.h, len(s.pos)
@@ -363,13 +384,27 @@ class AxisymmetricSPHSolver(SPHSolver):
         dv = vel[i] - vel[j]
         p = mie_gruneisen(rho, s.e, self.m)
         c = sound_speed(rho, s.e, p, self.m)
+        # Erosion: a ring with no neighbour (other than its own mirror image), or expanded to the
+        # density floor (vapour at <= 5 % solid density), is a fragment in free flight and carries no
+        # stress. Without this, terms divided by its tiny density throw it to unphysical speeds and the
+        # CFL time step collapses.
+        other = si != sj
+        free = (np.bincount(si[other], minlength=n) + np.bincount(sj[other], minlength=n)) == 0
+        free |= rho <= 1.01 * self.FLOOR * self.m.rho0
+        free |= self.eroded
+        p = np.where(free, 0.0, p)
+        c = np.where(free, 0.0, c)
+        if self.strength:
+            s.sdev[free] = 0.0
+            S = np.vstack([s.sdev, s.sdev[ghost] * [1, 1, 1, -1]])
         eta, m = self.eta, s.mass
         vr = np.einsum("ij,ij->i", dv, dx)
         mu = np.where(vr < 0, h * vr / (r * r + 0.01 * h * h), 0.0)
         ebar = 0.5 * (eta[si] + eta[sj])
         pi_ij = (-self.alpha * 0.5 * (c[si] + c[sj]) * mu + self.beta * mu * mu) / ebar  # = Pi_planar * rho/eta
         q = p / (rho * eta)
-        term = q[si] + q[sj] + pi_ij
+        live = ~(free[si] | free[sj])  # eroded rings no longer interact
+        term = (q[si] + q[sj] + pi_ij) * live
         nt = len(pos)
         mi, mj = m[si], m[sj]
         dvgw = np.einsum("ij,ij->i", dv, gw)
@@ -388,6 +423,7 @@ class AxisymmetricSPHSolver(SPHSolver):
             sw = S / (np.concatenate([rho, rho[ghost]]) * np.concatenate([eta, eta[ghost]]))[:, None]
             fx = (sw[i, 0] + sw[j, 0]) * gw[:, 0] + (sw[i, 3] + sw[j, 3]) * gw[:, 1]
             fy = (sw[i, 3] + sw[j, 3]) * gw[:, 0] + (sw[i, 1] + sw[j, 1]) * gw[:, 1]
+            fx, fy = fx * live, fy * live
             acc[:, 0] += (np.bincount(i, mj * fx, nt) - np.bincount(j, mi * fx, nt))[:n]
             acc[:, 1] += (np.bincount(i, mj * fy, nt) - np.bincount(j, mi * fy, nt))[:n]
             acc[:, 0] -= s.sdev[:, 2] / (rho * r_axis)  # hoop term, deviatoric part
@@ -407,7 +443,8 @@ class AxisymmetricSPHSolver(SPHSolver):
             ds[:, 2] = g2 * (ur - tr3)
             ds[:, 3] = g2 * drz + w * (Sd[:, 1] - Sd[:, 0])
             de += (Sd[:, 0] * drr + Sd[:, 1] * dzz + Sd[:, 2] * ur + 2.0 * Sd[:, 3] * drz) / rho
-        vmax = np.max(c + np.linalg.norm(s.vel, axis=1))
+        speed = c + np.linalg.norm(s.vel, axis=1)
+        vmax = np.max(speed[~self.eroded]) if (~self.eroded).any() else np.max(speed)
         return deta, acc, de, vmax, p, ds
 
     def step(self) -> float:
@@ -419,7 +456,9 @@ class AxisymmetricSPHSolver(SPHSolver):
         s.e += 0.5 * dt * de
         s.sdev += 0.5 * dt * ds
         s.pos += dt * s.vel
-        s.pos[:, 0] = np.abs(s.pos[:, 0])  # a ring cannot cross the axis
+        crossed = s.pos[:, 0] < 0  # a ring cannot cross the axis: reflect position and radial velocity
+        s.pos[crossed, 0] *= -1
+        s.vel[crossed, 0] *= -1
         self._cached = rates = self._rates(s)
         deta, acc, de, _, _, ds = rates
         s.vel += 0.5 * dt * acc
@@ -428,7 +467,8 @@ class AxisymmetricSPHSolver(SPHSolver):
         s.sdev += 0.5 * dt * ds
         if self.strength:
             self._yield(s)
-        floor = 0.05 * self.m.rho0 * 2 * np.pi * np.maximum(s.pos[:, 0], 0.25 * s.h)
+        self.eroded |= (np.linalg.norm(s.vel, axis=1) > self.v_erode) | (s.e > self.e_erode)
+        floor = self.FLOOR * self.m.rho0 * 2 * np.pi * np.maximum(s.pos[:, 0], 0.25 * s.h)
         self.eta = np.maximum(self.eta, floor)
         s.t += dt
         return dt

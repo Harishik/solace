@@ -55,7 +55,7 @@ the Earth turns under it at true sidereal rate, at up to 600× speed.
 
 | | |
 |---|---|
-| <img src="assets/sph_impact.gif" alt="SPH Whipple shield impact"> | **Hypervelocity impact.** A 2-D SPH hydrocode (Mie–Grüneisen equation of state) and Whipple-shield ballistic limit equations. Shock pressure matches the exact Hugoniot to 1.3 %, and the debris-cloud half-angle is ~38° (30–45° in experiments). |
+| <img src="assets/sph_impact.gif" alt="SPH Whipple shield impact"> | **Hypervelocity impact.** An SPH hydrocode, planar or axisymmetric, with a Mie–Grüneisen equation of state and elastic–perfectly-plastic strength, and Whipple-shield ballistic limit equations. Shock pressure matches the exact Hugoniot to 1.3 %, and the debris-cloud half-angle is ~38° (30–45° in experiments). |
 | <img src="assets/live_asteroids.png" alt="Asteroid tracker"> | **Near-Earth asteroids.** A three.js view of the inner Solar System with 2,548 potentially hazardous asteroids at today's positions, upcoming close approaches with their orbits, and MOID computed here (median difference from JPL: 1.2e-4 au). |
 
 - **Live Sky** web app (three.js): the features above, plus conjunction alerts for protected assets and orbit and ground tracks.
@@ -123,7 +123,7 @@ Space-Track (`--source spacetrack`, with `SPACETRACK_USER` / `SPACETRACK_PASS` s
 | Pc vs closed-form (isotropic, noncentral χ²) | matches to 1e-4 relative |
 | Screening vs CelesTrak SOCRATES (100 events) | 81 reproduced; TCA within 0.9 s median; relative speed within 0.4 m/s; range differs by a median of 5 km. SOCRATES used TLEs 14–45 h older, so this is TLE-update error, not engine error |
 | SPH vs exact shock Hugoniot (Al on Al, 1–4 km/s) | shock pressure within 1.3 %, particle velocity exact |
-| SPH vs BLE | the BLE limit for a 0.5/1.5 mm shield at 15 mm standoff, 7 km/s, is 1.95 mm; SPH shows a 2 mm particle perforating |
+| SPH vs BLE (`scripts/sph_ballistic_limit.py --axisymmetric`) | for a 0.5/1.5 mm shield at 15 mm standoff, 7 km/s, the BLE limit is 1.95 mm. Axisymmetric SPH with strength holds at 0.9 mm and fails at 1.2 mm; without strength it fails from 0.9 mm. SPH is conservative by a factor of ~1.6–2 in diameter |
 | Debris cloud half-angle (SPH) | ~38°, within the 30–45° seen experimentally |
 | MOID vs JPL SBDB (60 PHAs) | median difference 1.2e-4 au, max 8.8e-4 au |
 | Spacebook ephemeris vs our SGP4 (NISAR) | 43 m at epoch, so its covariance describes exactly the propagation we use |
@@ -132,7 +132,7 @@ Space-Track (`--source spacetrack`, with `SPACETRACK_USER` / `SPACETRACK_PASS` s
 ## Known limitations
 
 - TLEs carry no covariance. Pc uses COMSPOC Spacebook synthetic covariance where available, and assumed RIC sigmas otherwise. Each event records which source it used.
-- The SPH solver is 2-D planar and hydrodynamic only (no strength). It's good for cloud shape and timing, but not for exact rear-wall failure.
+- The SPH solver has strength (von Mises, thermal softening) and an axisymmetric mode, but no fracture or damage model, a coarse 0.1 mm resolution, and erosion of runaway particles. It predicts rear-wall failure at 0.9–1.2 mm against the empirical 1.95 mm, so use it for cloud shape and timing and the ballistic limit equations for pass/fail.
 - The kinetic-gas conjunction rate assumes random motion. Checked against one day of SGP4 screening for 80 objects (`scripts/validate_kinetic.py`), it is within 0.7–1.4× for non-constellation objects at 1–10 km, but 5–9× too high for Starlink below 2 km, because 91 % of Starlink close approaches are with other Starlinks flying coordinated orbits. Same-constellation pairs are therefore weighted 0.08 (measured) in per-object rates; this is one day of data and one constellation.
 - The small-debris power-law slopes in the risk index are defaults that still need calibrating against returned-surface impact data.
 - On 2016–2026 history the GNN ties a hybrid physics forecast of 28-day total shell populations. On debris-cohort decay it beats SGP4 physics by 11–14 % at 3 and 6 months, but space-weather inputs add nothing at any target tried, and its re-entry counts are far worse than physics (see PLAN §7).
