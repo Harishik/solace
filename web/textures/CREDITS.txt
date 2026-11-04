@@ -1,2 +1,3 @@
 Earth day, night-lights, ocean-mask and cloud maps: NASA Visible Earth (public domain), as packaged in the three.js examples (MIT).
 Star background: from the three-globe examples (MIT), derived from ESO/NASA imagery.
+Constellation figures and names: d3-celestial by Olaf Frohn (BSD 3-Clause), loaded at runtime.

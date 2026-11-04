@@ -59,15 +59,20 @@ def sky_snapshot(lat: float, lon: float, when: datetime | None = None, mag_limit
     for name, key in BODIES.items():
         app = observer.at(t).observe(eph[key]).apparent()
         alt, az, dist = app.altaz()
-        bodies.append({"name": name, "alt": alt.degrees, "az": az.degrees, "dist_au": dist.au})
+        ra, dec, _ = app.radec(epoch="date")
+        bodies.append({"name": name, "alt": alt.degrees, "az": az.degrees, "dist_au": dist.au,
+                       "ra": ra._degrees, "dec": dec.degrees})
 
     df, stars = bright_stars(mag_limit)
-    alt, az, _ = observer.at(t).observe(stars).apparent().altaz()
-    up = alt.degrees > -2
-    hip = df.index.to_numpy()[up]
+    app = observer.at(t).observe(stars).apparent()
+    alt, az, _ = app.altaz()
+    ra, dec, _ = app.radec(epoch="date")
+    # The whole sky (not only what is up now), so the client can turn it with the simulation clock.
     star_rows = [
-        {"hip": int(h), "name": STAR_NAMES.get(int(h), ""), "alt": float(a), "az": float(z), "mag": float(m)}
-        for h, a, z, m in zip(hip, alt.degrees[up], az.degrees[up], df["magnitude"].to_numpy()[up])
+        {"hip": int(h), "name": STAR_NAMES.get(int(h), ""), "alt": float(a), "az": float(z), "mag": float(m),
+         "ra": float(r), "dec": float(d)}
+        for h, a, z, m, r, d in zip(df.index.to_numpy(), alt.degrees, az.degrees, df["magnitude"].to_numpy(),
+                                    ra._degrees, dec.degrees)
     ]
     sun_alt = next(b["alt"] for b in bodies if b["name"] == "Sun")
     return {
